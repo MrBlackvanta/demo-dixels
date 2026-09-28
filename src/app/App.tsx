@@ -18,6 +18,10 @@ const VisitFlow = lazy(() =>
   import('./components/views/visitflow/VisitFlow').then((m) => ({ default: m.VisitFlow })),
 );
 
+const Gather = lazy(() =>
+  import('./components/views/gather/Gather').then((m) => ({ default: m.Gather })),
+);
+
 const SpaceOS = lazy(() =>
   import('./components/views/spaceos/SpaceOS').then((m) => ({ default: m.SpaceOS })),
 );
@@ -31,7 +35,6 @@ const load = {
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
   vmsadmin: lazy(() => import('./components/dixels2/VmsAdmin').then((m) => ({ default: m.VmsAdmin }))),
   security: lazy(() => import('./components/dixels2/VmsSecurity').then((m) => ({ default: m.VmsSecurity }))),
-  gather: lazy(() => import('./components/dixels2/EventsView').then((m) => ({ default: m.EventsView }))),
   tribes: lazy(() => import('./components/dixels2/CommunitiesView').then((m) => ({ default: m.CommunitiesView }))),
   omniserve: lazy(() => import('./components/dixels2/ServiceHubView').then((m) => ({ default: m.ServiceHubView }))),
   resolve: lazy(() => import('./components/dixels2/SupportCenterView').then((m) => ({ default: m.SupportCenterView }))),
@@ -79,7 +82,7 @@ function App() {
                 <Route path="/visitflow" element={<VisitFlow />} />
                 <Route path="/visitflow/admin" element={<LegacyModule id="vmsadmin" Component={load.vmsadmin} />} />
                 <Route path="/security" element={<LegacyModule id="security" Component={load.security} />} />
-                <Route path="/gather" element={<LegacyModule id="gather" Component={load.gather} />} />
+                <Route path="/gather" element={<Gather />} />
                 <Route path="/tribes" element={<LegacyModule id="tribes" Component={load.tribes} />} />
                 <Route path="/nourish" element={<Nourish />} />
                 <Route path="/omniserve" element={<LegacyModule id="omniserve" Component={load.omniserve} />} />

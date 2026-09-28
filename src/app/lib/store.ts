@@ -132,12 +132,14 @@ export function useScalar<T>(box: Scalar<T>): [T, (value: T) => void] {
   return [value, box.write];
 }
 
+const SEED_VERSION = 'v3';
+const SEED_STAMP = `${NAMESPACE}.seeded.${SEED_VERSION}`;
+
 export function seedOnce(collections: Array<{ col: Collection<never>; rows: unknown[] }>): void {
-  const stamp = localStorage.getItem(`${NAMESPACE}.seeded`);
-  if (stamp) return;
+  if (localStorage.getItem(SEED_STAMP)) return;
   collections.forEach(({ col, rows }) => col.replaceAll(rows as never[]));
   try {
-    localStorage.setItem(`${NAMESPACE}.seeded`, new Date().toISOString());
+    localStorage.setItem(SEED_STAMP, new Date().toISOString());
   } catch {
     /* ignore */
   }

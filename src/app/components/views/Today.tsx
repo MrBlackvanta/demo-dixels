@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { CountUp } from '../shell/CountUp';
 import { cn } from '../ui/utils';
+import { todayKey } from '../../lib/format';
 import { useCollection } from '../../lib/store';
 import {
   CURRENT_USER,
@@ -66,9 +67,14 @@ export function Today() {
 
   const openTasks = tasks.filter((task) => !task.done);
   const expectedGuests = visits.filter(
-    (visit) => visit.status === 'invited' || visit.status === 'pre-registered' || visit.status === 'checked-in',
+    (visit) =>
+      visit.date === todayKey() &&
+      (visit.status === 'invited' || visit.status === 'pre-registered' || visit.status === 'checked-in'),
   );
   const liveOrder = orders.find((order) => order.status !== 'delivered');
+  const dayOrder = [...meetings].sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+  );
 
   const stats = [
     { label: 'Meetings today', value: meetings.length, tone: 'brand' as const },
@@ -213,7 +219,7 @@ export function Today() {
               </h3>
             </div>
             <ul className="divide-y divide-line">
-              {meetings.map((item) => (
+              {dayOrder.map((item) => (
                 <li key={item.id} className="flex items-center gap-4 px-6 py-4">
                   <span className="w-12 shrink-0 text-[0.8125rem] font-medium tabular-nums text-ink">
                     {clock(item.start)}
