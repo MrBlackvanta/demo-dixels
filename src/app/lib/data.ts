@@ -1,4 +1,5 @@
 import { collection, scalar, seedOnce } from './store';
+import { shiftDay, todayKey } from './format';
 import type { Entity } from './store';
 import type { Persona } from './products';
 
@@ -12,6 +13,22 @@ export interface Meeting extends Entity {
   status: 'confirmed' | 'tentative' | 'proposed';
 }
 
+export type SpaceKind = 'Meeting room' | 'Huddle' | 'Focus pod' | 'Desk' | 'Training';
+
+export interface Space extends Entity {
+  name: string;
+  kind: SpaceKind;
+  level: string;
+  capacity: number;
+  amenities: string[];
+  utilisation: number;
+  offline: boolean;
+  approval: boolean;
+  note?: string;
+}
+
+export type BookingStatus = 'confirmed' | 'pending' | 'checked-in' | 'cancelled' | 'declined';
+
 export interface Booking extends Entity {
   space: string;
   level: string;
@@ -20,7 +37,11 @@ export interface Booking extends Entity {
   start: string;
   end: string;
   purpose: string;
-  status: 'confirmed' | 'pending' | 'cancelled';
+  status: BookingStatus;
+  spaceId?: string;
+  organizer?: string;
+  attendees?: number;
+  checkedInAt?: string;
 }
 
 export type VisitStatus =
@@ -112,6 +133,7 @@ export interface Notification extends Entity {
 }
 
 export const meetings = collection<Meeting>('meetings');
+export const spaces = collection<Space>('spaces');
 export const bookings = collection<Booking>('bookings');
 export const visits = collection<Visit>('visits');
 export const badges = collection<Badge>('badges');
@@ -141,19 +163,26 @@ const stamp = (offsetMinutes: number): string => {
   return d.toISOString();
 };
 
-const dayOffset = (days: number): string => {
+const todayAt = (clock: string): string => {
+  const [hours, minutes] = clock.split(':').map(Number);
   const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  d.setHours(hours, minutes, 0, 0);
+  return d.toISOString();
 };
 
-const today = (): string => dayOffset(0);
-const tomorrow = (): string => dayOffset(1);
-const yesterday = (): string => dayOffset(-1);
+const today = (): string => todayKey();
+const tomorrow = (): string => shiftDay(todayKey(), 1);
+const yesterday = (): string => shiftDay(todayKey(), -1);
 
 const row = <T,>(data: T, i: number) => ({
   ...data,
   id: `seed_${i}`,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+const keyed = <T extends { id: string }>(data: T) => ({
+  ...data,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 });
@@ -169,11 +198,34 @@ export function seedDemoData(): void {
       ].map(row),
     },
     {
+      col: spaces as never,
+      rows: [
+        { id: 'atrium', name: 'The Atrium', kind: 'Training', level: 'Level 1', capacity: 30, amenities: ['Display', 'Catering', 'Daylight'], utilisation: 88, offline: false, approval: true },
+        { id: 'studio-3', name: 'Studio 3', kind: 'Meeting room', level: 'Level 2', capacity: 8, amenities: ['Video', 'Whiteboard', 'Display'], utilisation: 64, offline: false, approval: false },
+        { id: 'pod-2a', name: 'Pod 2-A', kind: 'Focus pod', level: 'Level 2', capacity: 1, amenities: ['Soundproof'], utilisation: 71, offline: false, approval: false },
+        { id: 'pod-2b', name: 'Pod 2-B', kind: 'Focus pod', level: 'Level 2', capacity: 1, amenities: ['Soundproof'], utilisation: 34, offline: false, approval: false },
+        { id: 'cedar', name: 'Cedar', kind: 'Meeting room', level: 'Level 3', capacity: 6, amenities: ['Display', 'Whiteboard'], utilisation: 52, offline: false, approval: false },
+        { id: 'jasmine', name: 'Jasmine', kind: 'Huddle', level: 'Level 3', capacity: 4, amenities: ['Display'], utilisation: 41, offline: false, approval: false },
+        { id: 'desk-4-118', name: 'Desk 4-118', kind: 'Desk', level: 'Level 4', capacity: 1, amenities: ['Dual monitors', 'Daylight'], utilisation: 30, offline: false, approval: false },
+        { id: 'desk-4-120', name: 'Desk 4-120', kind: 'Desk', level: 'Level 4', capacity: 1, amenities: ['Standing desk'], utilisation: 12, offline: true, approval: false, note: 'Monitor arm replacement — back Thursday.' },
+        { id: 'orchid', name: 'Orchid', kind: 'Meeting room', level: 'Level 5', capacity: 12, amenities: ['Video', 'Display', 'Catering'], utilisation: 78, offline: false, approval: true },
+        { id: 'boardroom', name: 'The Boardroom', kind: 'Meeting room', level: 'Level 6', capacity: 14, amenities: ['Video', 'Catering', 'Daylight'], utilisation: 23, offline: false, approval: true },
+      ].map(keyed),
+    },
+    {
       col: bookings as never,
       rows: [
-        { space: 'Studio 3', level: 'Level 2', capacity: 8, date: today(), start: '10:00', end: '11:00', purpose: 'Design sync', status: 'confirmed' },
-        { space: 'Orchid', level: 'Level 5', capacity: 12, date: today(), start: '13:00', end: '14:00', purpose: 'Client visit', status: 'confirmed' },
-        { space: 'Desk 4-118', level: 'Level 4', capacity: 1, date: today(), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'pending' },
+        { spaceId: 'studio-3', space: 'Studio 3', level: 'Level 2', capacity: 8, date: today(), start: '10:00', end: '11:00', purpose: 'Design sync', status: 'checked-in', organizer: 'Sara Ahmed', attendees: 3, checkedInAt: todayAt('09:58') },
+        { spaceId: 'studio-3', space: 'Studio 3', level: 'Level 2', capacity: 8, date: today(), start: '15:30', end: '16:30', purpose: 'Partnership intro', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 4 },
+        { spaceId: 'orchid', space: 'Orchid', level: 'Level 5', capacity: 12, date: today(), start: '13:00', end: '14:00', purpose: 'Client visit — Northwind', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 6 },
+        { spaceId: 'orchid', space: 'Orchid', level: 'Level 5', capacity: 12, date: today(), start: '16:00', end: '17:00', purpose: 'Vendor demo', status: 'confirmed', organizer: 'Hana Youssef', attendees: 5 },
+        { spaceId: 'cedar', space: 'Cedar', level: 'Level 3', capacity: 6, date: today(), start: '09:00', end: '10:30', purpose: 'Sprint planning', status: 'confirmed', organizer: 'Karim Fouad', attendees: 5 },
+        { spaceId: 'jasmine', space: 'Jasmine', level: 'Level 3', capacity: 4, date: today(), start: '11:00', end: '12:00', purpose: 'Pair review', status: 'confirmed', organizer: 'Nadia Salem', attendees: 2 },
+        { spaceId: 'pod-2a', space: 'Pod 2-A', level: 'Level 2', capacity: 1, date: today(), start: '14:00', end: '15:00', purpose: 'Focus block', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
+        { spaceId: 'desk-4-118', space: 'Desk 4-118', level: 'Level 4', capacity: 1, date: today(), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
+        { spaceId: 'boardroom', space: 'The Boardroom', level: 'Level 6', capacity: 14, date: today(), start: '11:00', end: '13:00', purpose: 'Board lunch', status: 'pending', organizer: 'Exec office', attendees: 10 },
+        { spaceId: 'atrium', space: 'The Atrium', level: 'Level 1', capacity: 30, date: today(), start: '09:00', end: '17:00', purpose: 'Onboarding week', status: 'pending', organizer: 'People team', attendees: 25 },
+        { spaceId: 'studio-3', space: 'Studio 3', level: 'Level 2', capacity: 8, date: tomorrow(), start: '11:00', end: '12:00', purpose: 'Portfolio review', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 3 },
       ].map(row),
     },
     {

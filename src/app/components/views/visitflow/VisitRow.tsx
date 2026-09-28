@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { Car, IdCard } from 'lucide-react';
 import { cn } from '../../ui/utils';
+import { formatDay, initials } from '../../../lib/format';
 import type { Visit } from '../../../lib/data';
-import { STATUS, durationLabel, formatDay, initials, minutesOnSite } from './visits';
+import { STATUS, durationLabel, minutesOnSite } from './visits';
 
 interface VisitRowProps {
   visit: Visit;

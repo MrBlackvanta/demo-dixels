@@ -3,8 +3,9 @@ import { X } from 'lucide-react';
 import { cn } from '../../ui/utils';
 import { Modal } from '../../shell/Modal';
 import { CURRENT_USER } from '../../../lib/data';
+import { todayKey } from '../../../lib/format';
 import type { Visit, VisitKind } from '../../../lib/data';
-import { LOCATIONS, VISIT_KINDS, newCode, todayKey } from './visits';
+import { LOCATIONS, VISIT_KINDS, newCode } from './visits';
 
 type Draft = {
   guest: string;

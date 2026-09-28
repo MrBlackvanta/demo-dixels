@@ -4,13 +4,14 @@ import { toast } from 'sonner@2.0.3';
 import { cn } from '../../ui/utils';
 import { useCollection } from '../../../lib/store';
 import { badges as badgesCol, visits as visitsCol } from '../../../lib/data';
+import { todayKey } from '../../../lib/format';
 import type { Visit } from '../../../lib/data';
 import { CheckInDialog } from './CheckInDialog';
 import { Deliveries } from './Deliveries';
 import { InviteDialog } from './InviteDialog';
 import type { Draft } from './InviteDialog';
 import { VisitRow } from './VisitRow';
-import { byStartTime, matches, todayKey } from './visits';
+import { byStartTime, matches } from './visits';
 
 type Board = 'expected' | 'onsite' | 'gone';
 

@@ -5,12 +5,13 @@ import { cn } from '../../ui/utils';
 import { CountUp } from '../../shell/CountUp';
 import { useCollection } from '../../../lib/store';
 import { CURRENT_USER, visits as visitsCol } from '../../../lib/data';
+import { todayKey } from '../../../lib/format';
 import type { Visit } from '../../../lib/data';
 import { GuestPass } from './GuestPass';
 import { InviteDialog } from './InviteDialog';
 import type { Draft } from './InviteDialog';
 import { VisitRow } from './VisitRow';
-import { byStartTime, isActive, matches, todayKey } from './visits';
+import { byStartTime, isActive, matches } from './visits';
 
 type Range = 'today' | 'upcoming' | 'past';
 

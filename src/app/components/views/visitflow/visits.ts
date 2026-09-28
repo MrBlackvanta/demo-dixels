@@ -1,3 +1,4 @@
+import { todayKey } from '../../../lib/format';
 import type { Visit, VisitKind, VisitStatus } from '../../../lib/data';
 
 export const VISIT_KINDS: VisitKind[] = ['Guest', 'VIP', 'Interview', 'Vendor', 'Contractor'];
@@ -30,36 +31,9 @@ export const ACTIVE_STATUSES: VisitStatus[] = ['invited', 'pre-registered', 'che
 
 export const isActive = (visit: Visit): boolean => ACTIVE_STATUSES.includes(visit.status);
 
-export const todayKey = (): string => new Date().toISOString().slice(0, 10);
-
 export const isToday = (visit: Visit): boolean => visit.date === todayKey();
 
 export const newCode = (): string => `VF-${Math.floor(1000 + Math.random() * 9000)}`;
-
-export const initials = (name: string): string =>
-  name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-
-export const formatDay = (date: string): string => {
-  const key = todayKey();
-  if (date === key) return 'Today';
-
-  const target = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(target.getTime())) return date;
-
-  const diff = Math.round((target.getTime() - new Date(`${key}T00:00:00`).getTime()) / 86_400_000);
-  if (diff === 1) return 'Tomorrow';
-  if (diff === -1) return 'Yesterday';
-
-  return target.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-};
-
-export const formatClock = (iso?: string): string =>
-  iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
 
 export const minutesOnSite = (visit: Visit): number | null => {
   if (visit.status !== 'checked-in' || !visit.arrivedAt) return null;

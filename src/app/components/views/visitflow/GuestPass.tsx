@@ -1,7 +1,7 @@
 import { Car, Clock, Copy, MapPin } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
+import { formatDay, initials } from '../../../lib/format';
 import type { Visit } from '../../../lib/data';
-import { formatDay, initials } from './visits';
 
 const copy = async (text: string) => {
   try {

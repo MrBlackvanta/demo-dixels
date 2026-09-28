@@ -4,8 +4,8 @@ import { cn } from '../../ui/utils';
 import { Modal } from '../../shell/Modal';
 import { useCollection } from '../../../lib/store';
 import { badges as badgesCol } from '../../../lib/data';
+import { formatDay, initials } from '../../../lib/format';
 import type { Visit } from '../../../lib/data';
-import { formatDay, initials } from './visits';
 
 interface CheckInDialogProps {
   visit: Visit;
