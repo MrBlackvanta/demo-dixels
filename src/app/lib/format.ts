@@ -45,6 +45,14 @@ export const timeAgo = (iso: string): string => {
   return new Date(then).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 };
 
+export const money = (amount: number): string =>
+  new Intl.NumberFormat('en-SA', {
+    style: 'currency',
+    currency: 'SAR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+
 export const initials = (name: string): string =>
   name
     .split(' ')

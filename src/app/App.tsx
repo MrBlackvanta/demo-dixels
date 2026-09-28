@@ -34,6 +34,10 @@ const Resolve = lazy(() =>
   import('./components/views/resolve/Resolve').then((m) => ({ default: m.Resolve })),
 );
 
+const OmniServe = lazy(() =>
+  import('./components/views/omniserve/OmniServe').then((m) => ({ default: m.OmniServe })),
+);
+
 const load = {
   calendar: lazy(() => import('./components/dixels2/CoreCalendar').then((m) => ({ default: m.CoreCalendar }))),
   taskflow: lazy(() => import('./components/dixels2/WorkloadManagement').then((m) => ({ default: m.WorkloadManagement }))),
@@ -43,7 +47,6 @@ const load = {
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
   vmsadmin: lazy(() => import('./components/dixels2/VmsAdmin').then((m) => ({ default: m.VmsAdmin }))),
   security: lazy(() => import('./components/dixels2/VmsSecurity').then((m) => ({ default: m.VmsSecurity }))),
-  omniserve: lazy(() => import('./components/dixels2/ServiceHubView').then((m) => ({ default: m.ServiceHubView }))),
   livecanvas: lazy(() => import('./components/dixels2/SignageManager').then((m) => ({ default: m.SignageManager }))),
   content: lazy(() => import('./components/dixels2/ContentManagerView').then((m) => ({ default: m.ContentManagerView }))),
   vault: lazy(() => import('./components/dixels2/DigitalAssetsView').then((m) => ({ default: m.DigitalAssetsView }))),
@@ -91,7 +94,7 @@ function App() {
                 <Route path="/gather" element={<Gather />} />
                 <Route path="/tribes" element={<Tribes />} />
                 <Route path="/nourish" element={<Nourish />} />
-                <Route path="/omniserve" element={<LegacyModule id="omniserve" Component={load.omniserve} />} />
+                <Route path="/omniserve" element={<OmniServe />} />
                 <Route path="/resolve" element={<Resolve />} />
                 <Route path="/livecanvas" element={<LegacyModule id="livecanvas" Component={load.livecanvas} />} />
                 <Route path="/content" element={<LegacyModule id="content" Component={load.content} />} />

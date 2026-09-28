@@ -1,8 +1,9 @@
 import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { cart as cartCol, orderDestination } from '../../../lib/data';
 import type { CartLine } from '../../../lib/data';
+import { money } from '../../../lib/format';
 import { useCollection, useScalar } from '../../../lib/store';
-import { DESTINATIONS, money } from './menu';
+import { DESTINATIONS } from './menu';
 
 interface CartPanelProps {
   onPlace: (lines: CartLine[], destination: string, total: number) => void;

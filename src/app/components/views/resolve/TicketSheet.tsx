@@ -4,7 +4,7 @@ import { cn } from '../../ui/utils';
 import { Modal } from '../../shell/Modal';
 import { initials, timeAgo } from '../../../lib/format';
 import type { Ticket, TicketPriority } from '../../../lib/data';
-import { Rating } from './Rating';
+import { Rating } from '../../shell/Rating';
 import { SlaPill } from './SlaPill';
 import {
   AGENTS,

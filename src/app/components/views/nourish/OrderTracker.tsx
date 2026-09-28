@@ -3,7 +3,7 @@ import { Check, CookingPot, PackageCheck, Receipt, Bike } from 'lucide-react';
 import { cn } from '../../ui/utils';
 import { orders as ordersCol } from '../../../lib/data';
 import type { Order } from '../../../lib/data';
-import { money } from './menu';
+import { money } from '../../../lib/format';
 
 const STEPS: Array<{ id: Order['status']; label: string; icon: typeof Receipt }> = [
   { id: 'placed', label: 'Order placed', icon: Receipt },

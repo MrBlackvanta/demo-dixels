@@ -1,5 +1,5 @@
 import { Star } from 'lucide-react';
-import { cn } from '../../ui/utils';
+import { cn } from '../ui/utils';
 
 const SCORES = [1, 2, 3, 4, 5];
 

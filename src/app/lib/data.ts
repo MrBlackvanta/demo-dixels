@@ -8,6 +8,7 @@ import {
   NOTIFICATIONS,
   ORDERS,
   POSTS,
+  REQUESTS,
   SPACES,
   TASKS,
   TICKETS,
@@ -197,13 +198,13 @@ export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export type TicketStatus = 'open' | 'in-progress' | 'waiting' | 'resolved';
 
-export type TicketEntryKind = 'note' | 'event';
+export type ThreadEntryKind = 'note' | 'event';
 
-export interface TicketEntry {
+export interface ThreadEntry {
   author: string;
   body: string;
   at: string;
-  kind: TicketEntryKind;
+  kind: ThreadEntryKind;
 }
 
 export interface Ticket extends Entity {
@@ -218,10 +219,54 @@ export interface Ticket extends Entity {
   requester: string;
   openedAt: string;
   dueAt: string;
-  thread: TicketEntry[];
+  thread: ThreadEntry[];
   assignee?: string;
   spaceId?: string;
   resolvedAt?: string;
+  rating?: number;
+}
+
+export type ServiceCategory = 'Technology' | 'Workplace' | 'People' | 'Travel' | 'Access';
+
+export type RequestStage =
+  | 'approval'
+  | 'arranging'
+  | 'ready'
+  | 'delivered'
+  | 'declined'
+  | 'cancelled';
+
+export type Verdict = 'pending' | 'approved' | 'declined';
+
+export interface ApprovalStep {
+  role: string;
+  approver: string;
+  verdict: Verdict;
+  at?: string;
+  note?: string;
+}
+
+export interface ServiceRequest extends Entity {
+  ref: string;
+  serviceId: string;
+  service: string;
+  category: ServiceCategory;
+  choice: string;
+  quantity: number;
+  unitCost: number;
+  requester: string;
+  team: string;
+  reason: string;
+  costCentre: string;
+  stage: RequestStage;
+  raisedAt: string;
+  neededBy: string;
+  deliverTo: string;
+  chain: ApprovalStep[];
+  thread: ThreadEntry[];
+  handler?: string;
+  spaceId?: string;
+  settledAt?: string;
   rating?: number;
 }
 
@@ -251,6 +296,7 @@ export const deliveries = collection<Delivery>('deliveries');
 export const orders = collection<Order>('orders');
 export const cart = collection<CartLine>('cart');
 export const tickets = collection<Ticket>('tickets');
+export const requests = collection<ServiceRequest>('requests');
 export const tasks = collection<Task>('tasks');
 export const notifications = collection<Notification>('notifications');
 
@@ -263,6 +309,7 @@ export const CURRENT_USER = {
   name: 'Sara Ahmed',
   initials: 'SA',
   role: 'Product Design Lead',
+  team: 'Design',
   email: 'sara.ahmed@company.com',
   building: 'Riyadh HQ',
 } as const;
@@ -325,6 +372,10 @@ export function seedDemoData(): void {
     {
       col: tickets as never,
       rows: TICKETS.map(keyed),
+    },
+    {
+      col: requests as never,
+      rows: REQUESTS.map(keyed),
     },
     {
       col: tasks as never,

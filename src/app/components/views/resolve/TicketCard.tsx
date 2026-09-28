@@ -2,7 +2,7 @@ import { ChevronRight, MessageSquareText, Star } from 'lucide-react';
 import { cn } from '../../ui/utils';
 import { timeAgo } from '../../../lib/format';
 import type { Ticket } from '../../../lib/data';
-import { Rating } from './Rating';
+import { Rating } from '../../shell/Rating';
 import { SlaPill } from './SlaPill';
 import {
   PRIORITY_TONE,

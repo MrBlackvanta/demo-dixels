@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { cn } from '../../ui/utils';
 import { Modal } from '../../shell/Modal';
-import { defaultSelection, describeSelection, money, priceFor } from './menu';
+import { money } from '../../../lib/format';
+import { defaultSelection, describeSelection, priceFor } from './menu';
 import type { MenuItem } from './menu';
 
 interface ItemDialogProps {

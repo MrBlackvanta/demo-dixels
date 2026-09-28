@@ -7,7 +7,7 @@ import { useCollection } from '../../../lib/store';
 import { tickets as ticketsCol } from '../../../lib/data';
 import { minutesLeft, slaLabel, slaState } from '../../../lib/sla';
 import type { Ticket, TicketPriority } from '../../../lib/data';
-import { QueueEmpty } from './QueueEmpty';
+import { EmptyState } from '../../shell/EmptyState';
 import { QueueRow } from './QueueRow';
 import { TicketSheet } from './TicketSheet';
 import { Toolbar } from './Toolbar';
@@ -186,7 +186,7 @@ export function AgentConsole() {
         />
 
         {shown.length === 0 ? (
-          <QueueEmpty
+          <EmptyState
             icon={Gauge}
             title={
               lens === 'loose'

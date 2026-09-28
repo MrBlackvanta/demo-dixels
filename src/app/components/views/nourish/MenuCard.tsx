@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Sliders } from 'lucide-react';
 import { cn } from '../../ui/utils';
-import { money } from './menu';
+import { money } from '../../../lib/format';
 import type { MenuItem } from './menu';
 
 interface MenuCardProps {

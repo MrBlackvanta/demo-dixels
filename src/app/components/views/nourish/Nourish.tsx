@@ -4,12 +4,13 @@ import { toast } from 'sonner@2.0.3';
 import { cn } from '../../ui/utils';
 import { useCollection } from '../../../lib/store';
 import { cart as cartCol, orders as ordersCol } from '../../../lib/data';
+import { money } from '../../../lib/format';
 import type { CartLine, Order } from '../../../lib/data';
 import { CartPanel } from './CartPanel';
 import { ItemDialog } from './ItemDialog';
 import { MenuCard } from './MenuCard';
 import { OrderTracker } from './OrderTracker';
-import { CATEGORIES, MENU, money } from './menu';
+import { CATEGORIES, MENU } from './menu';
 import type { CategoryId, MenuItem } from './menu';
 
 type Filter = CategoryId | 'all';

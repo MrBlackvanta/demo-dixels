@@ -259,14 +259,6 @@ export const DESTINATIONS = [
 export const menuItemById = (id: string): MenuItem | undefined =>
   MENU.find((item) => item.id === id);
 
-export const money = (amount: number): string =>
-  new Intl.NumberFormat('en-SA', {
-    style: 'currency',
-    currency: 'SAR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-
 export const defaultSelection = (item: MenuItem): Record<string, string> =>
   Object.fromEntries(
     item.options.filter((group) => group.required).map((group) => [group.id, group.choices[0].label]),

@@ -1,3 +1,4 @@
+import { chainFor, costCentreOf, costOf, serviceById } from './catalogue';
 import { shiftDay, todayKey } from './format';
 import { dueFrom } from './sla';
 import type { Entity } from './store';
@@ -11,9 +12,10 @@ import type {
   Order,
   Post,
   Space,
+  ServiceRequest,
   Task,
+  ThreadEntryKind,
   Ticket,
-  TicketEntryKind,
   Tribe,
   Visit,
 } from './data';
@@ -697,7 +699,7 @@ interface Line {
   author: string;
   body: string;
   ago: number;
-  kind?: TicketEntryKind;
+  kind?: ThreadEntryKind;
 }
 
 type TicketSeed = Omit<
@@ -1213,6 +1215,10 @@ export const NOTIFICATIONS: New<Notification>[] = [
   { title: 'Desk 4-120 is offline', body: 'Monitor arm replacement — back Thursday', product: 'SpaceOS', read: true },
   { title: 'Nadia Salem posted in Tech Talks', body: 'The agents deep dive deck is up', product: 'Tribes', read: false },
   { title: 'Two people want to join Giving Back', body: 'Tarek Aziz and Yara Sabry are waiting', product: 'Tribes', read: false },
+  { title: 'Five requests are waiting on you', body: 'Three design seats, a chair and a course', product: 'OmniServe', read: false },
+  { title: 'Your badge is ready at reception', body: 'Bring photo ID — it takes a minute', product: 'OmniServe', read: false },
+  { title: 'Your conference pass is with Finance', body: 'Noura Sami approved it, Tarek Aziz has it now', product: 'OmniServe', read: false },
+  { title: 'Bassem Riad ordered your laptop', body: 'MacBook Pro 14 · Thursday at the latest', product: 'OmniServe', read: true },
 ];
 
 export const TRIBES: Array<New<Tribe> & { id: string }> = [
@@ -1757,3 +1763,495 @@ export const POSTS: Array<New<Post> & { id: string }> = [
     ],
   },
 ];
+
+interface Sign {
+  ago: number;
+  note?: string;
+  refused?: boolean;
+}
+
+type RequestSeed = Omit<
+  New<ServiceRequest>,
+  | 'ref'
+  | 'service'
+  | 'category'
+  | 'unitCost'
+  | 'costCentre'
+  | 'raisedAt'
+  | 'neededBy'
+  | 'deliverTo'
+  | 'chain'
+  | 'thread'
+  | 'settledAt'
+> & {
+  id: string;
+  age: number;
+  due: number;
+  signed?: Sign[];
+  talk: Line[];
+  place?: string;
+  settled?: number;
+};
+
+const REQUEST_SEED: RequestSeed[] = [
+  {
+    id: 'rq-figma-yara',
+    serviceId: 'design-seat', choice: 'Figma — editor', quantity: 1,
+    requester: 'Yara Sabry', team: 'Engineering',
+    reason: 'Picking up the component library work while Rana is on the rebrand.',
+    stage: 'approval', age: 34, due: 3, place: 'Desk 4-131 · Level 4',
+    signed: [{ ago: 30, note: 'Agreed — she is doing the front-end of the system anyway.' }],
+    talk: [
+      { author: 'Yara Sabry', body: 'A viewer seat will not do it, I need to push changes back into the library.', ago: 33 },
+    ],
+  },
+  {
+    id: 'rq-adobe-farah',
+    serviceId: 'design-seat', choice: 'Adobe Creative Cloud', quantity: 1,
+    requester: 'Farah Nabil', team: 'Marketing',
+    reason: 'Editing the campaign masters that come back from the agency as layered files.',
+    stage: 'approval', age: 56, due: 4, place: 'Desk 3-208 · Level 3',
+    signed: [{ ago: 52, note: 'Budgeted under the Q4 campaign line.' }],
+    talk: [],
+  },
+  {
+    id: 'rq-figma-salma',
+    serviceId: 'design-seat', choice: 'Figma — editor', quantity: 2,
+    requester: 'Salma Gaber', team: 'Marketing',
+    reason: 'Two seats for the community team so event artwork stops going through one person.',
+    stage: 'approval', age: 22, due: 5, place: 'Desk 3-214 · Level 3',
+    signed: [{ ago: 18 }],
+    talk: [
+      { author: 'Salma Gaber', body: 'If only one is going to fly, make it the second seat — that is the bottleneck.', ago: 20 },
+    ],
+  },
+  {
+    id: 'rq-chair-rana',
+    serviceId: 'ergo-chair', choice: 'With headrest', quantity: 1,
+    requester: 'Rana Khalil', team: 'Design',
+    reason: 'Physio asked for a headrest after the neck strain that kept me home in August.',
+    stage: 'approval', age: 12, due: 10, place: 'Desk 4-124 · Level 4',
+    talk: [
+      { author: 'Rana Khalil', body: 'I have the assessment note as a PDF if anyone needs to see it.', ago: 11 },
+    ],
+  },
+  {
+    id: 'rq-course-reem',
+    serviceId: 'training-course', choice: 'External course', quantity: 1,
+    requester: 'Reem Othman', team: 'Design',
+    reason: 'Quantitative research methods — three days with the Nielsen Norman group in Dubai.',
+    stage: 'approval', age: 27, due: 30, place: 'Desk 4-126 · Level 4',
+    talk: [
+      { author: 'Reem Othman', body: 'Dates are the 12th to the 14th. I would run a session for the guild when I am back.', ago: 26 },
+    ],
+  },
+  {
+    id: 'rq-laptop-sara',
+    serviceId: 'laptop-refresh', choice: 'MacBook Pro 14"', quantity: 1,
+    requester: 'Sara Ahmed', team: 'Design',
+    reason: 'Four years old, the fans run through every prototype build and it is out of warranty.',
+    stage: 'arranging', age: 44, due: 4, handler: 'Bassem Riad', spaceId: 'desk-4-118',
+    signed: [{ ago: 40, note: 'Fine. Trade the old one in.' }],
+    talk: [
+      { author: 'Bassem Riad', body: 'Ordered. It ships from the Riyadh warehouse, so Thursday at the latest.', ago: 20 },
+      { author: 'Bassem Riad', body: 'Bring the old machine down when you collect — I will wipe it in front of you.', ago: 19 },
+    ],
+  },
+  {
+    id: 'rq-badge-sara',
+    serviceId: 'replacement-badge', choice: 'Replacement card', quantity: 1,
+    requester: 'Sara Ahmed', team: 'Design',
+    reason: 'Snapped in the reader at the north lobby this morning — half of it is still in there.',
+    stage: 'ready', age: 7, due: 1, handler: 'Adel Rashid', place: 'Reception · Level 1',
+    signed: [{ ago: 6, note: 'Old card voided. Printing now.' }],
+    talk: [
+      { author: 'Adel Rashid', body: 'Printed and at reception. Bring photo ID and it takes a minute.', ago: 2 },
+    ],
+  },
+  {
+    id: 'rq-letter-sara',
+    serviceId: 'employment-letter', choice: 'Standard letter', quantity: 1,
+    requester: 'Sara Ahmed', team: 'Design',
+    reason: 'For the landlord on the new flat — they want the salary line included.',
+    stage: 'delivered', age: 30, due: 1, handler: 'Lina Haddad', settled: 20,
+    place: 'Sent to sara.ahmed@company.com',
+    talk: [
+      { author: 'Lina Haddad', body: 'Signed and stamped, in your inbox. Shout if they want it in Arabic too.', ago: 20 },
+    ],
+  },
+  {
+    id: 'rq-arm-sara',
+    serviceId: 'monitor-arm', choice: 'Dual arm', quantity: 1,
+    requester: 'Sara Ahmed', team: 'Design',
+    reason: 'Two screens on the desk and no room left for anything you can write on.',
+    stage: 'delivered', age: 74, due: -1, handler: 'Waleed Tantawy', settled: 8, rating: 5,
+    spaceId: 'desk-4-118',
+    signed: [{ ago: 70 }],
+    talk: [
+      { author: 'Waleed Tantawy', body: 'Fitted while you were at the all-hands. The clamp takes the desk edge fine.', ago: 8 },
+    ],
+  },
+  {
+    id: 'rq-conf-sara',
+    serviceId: 'conference-ticket', choice: 'Full conference pass', quantity: 1,
+    requester: 'Sara Ahmed', team: 'Design',
+    reason: 'Config in London — two of the talks are on the exact versioning problem we hit in June.',
+    stage: 'approval', age: 104, due: 45, spaceId: 'desk-4-118',
+    signed: [{ ago: 100, note: 'Worth it if the write-up goes to the whole guild.' }],
+    talk: [
+      { author: 'Sara Ahmed', body: 'Early-bird pricing closes on the 30th, after that it is four thousand more.', ago: 60 },
+    ],
+  },
+  {
+    id: 'rq-headset-sara',
+    serviceId: 'call-headset', choice: 'Wireless earbuds', quantity: 1,
+    requester: 'Sara Ahmed', team: 'Design',
+    reason: 'The laptop microphone picks up the whole floor on client calls.',
+    stage: 'ready', age: 19, due: 1, handler: 'Bassem Riad', place: 'IT bar · Level 2',
+    talk: [
+      { author: 'Bassem Riad', body: 'On the shelf with your name on it. Pair them at the bar and I will check the mic.', ago: 4 },
+    ],
+  },
+  {
+    id: 'rq-laptop-karim',
+    serviceId: 'laptop-refresh', choice: 'Dell XPS 15', quantity: 1,
+    requester: 'Karim Fouad', team: 'Engineering',
+    reason: 'Replacement for the machine whose keyboard gave up after the Jeddah trip.',
+    stage: 'arranging', age: 66, due: 5, handler: 'Bassem Riad', place: 'Desk 2-042 · Level 2',
+    signed: [{ ago: 62, note: 'Approved at skip level — Karim cannot sign his own.' }],
+    talk: [
+      { author: 'Bassem Riad', body: 'Stock is out until Tuesday. I can lend you a spare in the meantime.', ago: 40 },
+      { author: 'Karim Fouad', body: 'A loaner would help, yes.', ago: 39 },
+    ],
+  },
+  {
+    id: 'rq-screen-nadia',
+    serviceId: 'second-screen', choice: '34-inch ultrawide', quantity: 1,
+    requester: 'Nadia Salem', team: 'Engineering',
+    reason: 'Three terminals and a browser on one laptop screen is not working any more.',
+    stage: 'arranging', age: 30, due: 3, place: 'Desk 2-048 · Level 2',
+    signed: [{ ago: 26 }],
+    talk: [],
+  },
+  {
+    id: 'rq-copilot-sami',
+    serviceId: 'dev-seat', choice: 'GitHub Copilot', quantity: 3,
+    requester: 'Sami Kamal', team: 'Engineering',
+    reason: 'Three seats for the platform squad — the trial ran out on Friday.',
+    stage: 'approval', age: 9, due: 7, place: 'Desk 2-051 · Level 2',
+    talk: [
+      { author: 'Sami Kamal', body: 'Measured it over the trial: about a day a week each on boilerplate.', ago: 8 },
+    ],
+  },
+  {
+    id: 'rq-datadog-ziad',
+    serviceId: 'dev-seat', choice: 'Datadog — full stack', quantity: 2,
+    requester: 'Ziad Morsi', team: 'Engineering',
+    reason: 'Two seats so the on-call rotation can see traces without borrowing a login.',
+    stage: 'arranging', age: 13, due: 6, place: 'Desk 2-055 · Level 2',
+    signed: [{ ago: 8, note: 'Take it from the observability line, not headcount.' }],
+    talk: [
+      { author: 'Ziad Morsi', body: 'No rush on the exact day, but the on-call rotation changes on the first.', ago: 3 },
+    ],
+  },
+  {
+    id: 'rq-chair-omar',
+    serviceId: 'ergo-chair', choice: 'Standard', quantity: 1,
+    requester: 'Omar Zaki', team: 'Data',
+    reason: 'The gas lift on mine drops about an inch every twenty minutes.',
+    stage: 'approval', age: 48, due: 12, place: 'Desk 3-117 · Level 3',
+    signed: [{ ago: 44 }],
+    talk: [
+      { author: 'Yousef Mansour', body: 'Before I sign this off — has anyone tried swapping the cylinder? It is a ten-minute job.', ago: 20 },
+      { author: 'Omar Zaki', body: 'Workplace replaced it in March and it has done the same thing again.', ago: 19 },
+    ],
+  },
+  {
+    id: 'rq-sitstand-tamer',
+    serviceId: 'sit-stand', choice: 'Full desk conversion', quantity: 1,
+    requester: 'Tamer Sobhy', team: 'Engineering',
+    reason: 'Standing for part of the day is the only thing that has helped the lower back.',
+    stage: 'arranging', age: 36, due: 8, handler: 'Yousef Mansour', spaceId: 'desk-4-122',
+    signed: [{ ago: 30 }, { ago: 22, note: 'Frame takes the motor. Booked for Thursday morning.' }],
+    talk: [
+      { author: 'Yousef Mansour', body: 'We will need the desk clear from eight. It is about two hours with testing.', ago: 21 },
+    ],
+  },
+  {
+    id: 'rq-plants-lina',
+    serviceId: 'team-plants', choice: 'Full corner', quantity: 1,
+    requester: 'Lina Haddad', team: 'People',
+    reason: 'The People corner on Level 3 has had an empty planter in it since the refit.',
+    stage: 'ready', age: 54, due: 2, handler: 'Yousef Mansour', place: 'Level 3 · North corner',
+    signed: [{ ago: 50 }],
+    talk: [
+      { author: 'Yousef Mansour', body: 'Delivered and placed. The supplier waters them every other Tuesday.', ago: 5 },
+    ],
+  },
+  {
+    id: 'rq-locker-waleed',
+    serviceId: 'locker', choice: 'Standard locker', quantity: 1,
+    requester: 'Waleed Tantawy', team: 'Finance',
+    reason: 'Cycling in three days a week and there is nowhere to leave a helmet.',
+    stage: 'ready', age: 16, due: 1, handler: 'Yousef Mansour', place: 'Level 5 · Locker bank B',
+    talk: [
+      { author: 'Yousef Mansour', body: 'B-24 is yours. Code is on the slip at the facilities desk.', ago: 6 },
+    ],
+  },
+  {
+    id: 'rq-deskmove-yara',
+    serviceId: 'desk-move', choice: 'Move to another desk', quantity: 1,
+    requester: 'Yara Sabry', team: 'Engineering',
+    reason: 'Moving next to the platform squad now that I am on the design system full time.',
+    stage: 'arranging', age: 26, due: 4, handler: 'Yousef Mansour', spaceId: 'desk-4-120',
+    talk: [
+      { author: 'Yousef Mansour', body: '4-120 is offline until Thursday for a monitor arm. I will move you Friday morning.', ago: 14 },
+    ],
+  },
+  {
+    id: 'rq-letter-dina',
+    serviceId: 'employment-letter', choice: 'Standard letter', quantity: 1,
+    requester: 'Dina Hafez', team: 'People',
+    reason: 'Visa application — the consulate wants it dated within thirty days.',
+    stage: 'delivered', age: 38, due: -1, handler: 'Lina Haddad', settled: 30, rating: 5,
+    place: 'Sent to dina.hafez@company.com',
+    talk: [],
+  },
+  {
+    id: 'rq-cards-fadi',
+    serviceId: 'business-cards', choice: 'Box of 200', quantity: 2,
+    requester: 'Fadi Barakat', team: 'Commercial',
+    reason: 'Two boxes to cover the Riyadh and Dubai events in November.',
+    stage: 'approval', age: 6, due: 20, place: 'Desk 5-012 · Level 5',
+    talk: [],
+  },
+  {
+    id: 'rq-cards-khaled',
+    serviceId: 'business-cards', choice: 'Box of 200', quantity: 1,
+    requester: 'Khaled Nour', team: 'Commercial',
+    reason: 'New title on the cards after the move to director.',
+    stage: 'delivered', age: 200, due: -3, handler: 'Farah Nabil', settled: 96, rating: 4,
+    place: 'Desk 5-010 · Level 5',
+    talk: [
+      { author: 'Farah Nabil', body: 'Printed on the new stock. They read Sales Director, Commercial.', ago: 97 },
+    ],
+  },
+  {
+    id: 'rq-intl-hana',
+    serviceId: 'international-trip', choice: 'Return flight and four nights', quantity: 1,
+    requester: 'Hana Youssef', team: 'Commercial',
+    reason: 'Vertex Labs want the pilot scope walked through in person before they sign.',
+    stage: 'approval', age: 74, due: 21, place: 'Desk 5-016 · Level 5',
+    signed: [{ ago: 70, note: 'Go. This one is worth the flight.' }],
+    talk: [
+      { author: 'Hana Youssef', body: 'Passport is valid to 2029, and the visa is on arrival for this one.', ago: 72 },
+      { author: 'Tarek Aziz', body: 'Holding until I see whether it lands in this quarter or next.', ago: 24 },
+    ],
+  },
+  {
+    id: 'rq-domestic-amira',
+    serviceId: 'domestic-trip', choice: 'Return flight and two nights', quantity: 1,
+    requester: 'Amira Shafik', team: 'Marketing',
+    reason: 'Jeddah office launch — two days on site for the press morning.',
+    stage: 'arranging', age: 18, due: 9, handler: 'Waleed Tantawy', place: 'Desk 3-210 · Level 3',
+    signed: [{ ago: 14 }],
+    talk: [
+      { author: 'Waleed Tantawy', body: 'Flights held on the 06:40 out and the 19:15 back. Confirm and I will ticket them.', ago: 6 },
+    ],
+  },
+  {
+    id: 'rq-transfer-noura',
+    serviceId: 'airport-transfer', choice: 'One way', quantity: 2,
+    requester: 'Noura Sami', team: 'Executive',
+    reason: 'Picking up the Northwind pair on the morning of the visit.',
+    stage: 'arranging', age: 15, due: 2, handler: 'Waleed Tantawy', place: 'King Khalid International · Terminal 5',
+    signed: [{ ago: 10, note: 'Chief of staff spend routes to Finance.' }],
+    talk: [
+      { author: 'Waleed Tantawy', body: 'Two cars booked against flight SV1022. Driver details the night before.', ago: 4 },
+    ],
+  },
+  {
+    id: 'rq-badge-mona',
+    serviceId: 'replacement-badge', choice: 'Replacement card', quantity: 1,
+    requester: 'Mona Darwish', team: 'People',
+    reason: 'Left it in the studio locker over the weekend and the locker has been cleared.',
+    stage: 'approval', age: 4, due: 1, place: 'Reception · Level 1',
+    talk: [],
+  },
+  {
+    id: 'rq-parking-tarek',
+    serviceId: 'parking-permit', choice: 'Monthly bay', quantity: 1,
+    requester: 'Tarek Aziz', team: 'Finance',
+    reason: 'Driving in from Diriyah now that the early train has been cut.',
+    stage: 'ready', age: 38, due: 2, handler: 'Adel Rashid', place: 'Basement 2 · Bay 114',
+    signed: [{ ago: 34 }],
+    talk: [
+      { author: 'Adel Rashid', body: 'Bay 114 from the first. Your plate is on the barrier list already.', ago: 12 },
+    ],
+  },
+  {
+    id: 'rq-afterhours-sami',
+    serviceId: 'after-hours', choice: 'Two-week window', quantity: 1,
+    requester: 'Sami Kamal', team: 'Engineering',
+    reason: 'Cutover window for the platform migration runs from 22:00 on three nights.',
+    stage: 'approval', age: 11, due: 5, place: 'Level 2 · Engineering floor',
+    talk: [
+      { author: 'Sami Kamal', body: 'Nights of the 8th, 9th and 15th. Two of us, both on the change ticket.', ago: 10 },
+    ],
+  },
+  {
+    id: 'rq-loan-salma',
+    serviceId: 'loan-kit', choice: 'Roaming microphone', quantity: 1,
+    requester: 'Salma Gaber', team: 'Marketing',
+    reason: 'Q&A at the Tech Summit — the fixed mic does not reach the back of the room.',
+    stage: 'ready', age: 21, due: 3, handler: 'Ziad Morsi', spaceId: 'forum',
+    talk: [
+      { author: 'Ziad Morsi', body: 'Charged and in the AV cupboard by the stage. Spare batteries taped to the case.', ago: 7 },
+    ],
+  },
+  {
+    id: 'rq-course-maya',
+    serviceId: 'training-course', choice: 'External course', quantity: 1,
+    requester: 'Maya Fahmy', team: 'Product',
+    reason: 'Pricing strategy course, five days, run by the same people who did the Dubai one.',
+    stage: 'declined', age: 60, due: 40, settled: 40, place: 'Desk 3-120 · Level 3',
+    signed: [{ ago: 40, refused: true, note: 'Not this quarter — the learning budget is spent. Bring it back in January and it goes through.' }],
+    talk: [
+      { author: 'Maya Fahmy', body: 'Understood. I will put it in the January list.', ago: 38 },
+    ],
+  },
+  {
+    id: 'rq-intl-khaled',
+    serviceId: 'international-trip', choice: 'Return flight and four nights', quantity: 1,
+    requester: 'Khaled Nour', team: 'Commercial',
+    reason: 'Two customer meetings in Frankfurt in the same week.',
+    stage: 'declined', age: 130, due: 25, settled: 96, place: 'Desk 5-010 · Level 5',
+    signed: [
+      { ago: 120 },
+      { ago: 96, refused: true, note: 'Both meetings moved to video last week. Happy to reopen if either one insists on a room.' },
+    ],
+    talk: [
+      { author: 'Khaled Nour', body: 'Fair. One of them has already asked for a call instead.', ago: 94 },
+    ],
+  },
+  {
+    id: 'rq-laptop-tarek',
+    serviceId: 'laptop-refresh', choice: 'MacBook Air 13"', quantity: 1,
+    requester: 'Tarek Aziz', team: 'Finance',
+    reason: 'Four years on the old one and the battery no longer lasts a morning.',
+    stage: 'delivered', age: 160, due: -4, handler: 'Bassem Riad', settled: 40, rating: 5,
+    place: 'Desk 5-004 · Level 5',
+    signed: [{ ago: 150 }],
+    talk: [
+      { author: 'Bassem Riad', body: 'Set up and migrated. The old one is wiped and back in the pool.', ago: 41 },
+    ],
+  },
+  {
+    id: 'rq-screen-bassem',
+    serviceId: 'second-screen', choice: '27-inch 4K', quantity: 1,
+    requester: 'Bassem Riad', team: 'IT',
+    reason: 'A second screen at the IT bar so I can read a ticket and a console at once.',
+    stage: 'delivered', age: 190, due: -6, handler: 'Waleed Tantawy', settled: 120, rating: 4,
+    place: 'IT bar · Level 2',
+    signed: [{ ago: 180 }],
+    talk: [],
+  },
+  {
+    id: 'rq-chair-laila',
+    serviceId: 'ergo-chair', choice: 'Standard', quantity: 1,
+    requester: 'Laila Mostafa', team: 'Legal',
+    reason: 'Assessment after the maternity return recommended a fully adjustable chair.',
+    stage: 'delivered', age: 210, due: -5, handler: 'Yousef Mansour', settled: 60, rating: 5,
+    place: 'Desk 6-008 · Level 6',
+    signed: [{ ago: 200 }, { ago: 190 }],
+    talk: [
+      { author: 'Yousef Mansour', body: 'Assembled at your desk and set to the height on the assessment.', ago: 61 },
+    ],
+  },
+  {
+    id: 'rq-cards-reem',
+    serviceId: 'business-cards', choice: 'Box of 200', quantity: 1,
+    requester: 'Reem Othman', team: 'Design',
+    reason: 'Running the research recruitment stand at the university fair.',
+    stage: 'delivered', age: 170, due: -8, handler: 'Farah Nabil', settled: 150,
+    place: 'Desk 4-126 · Level 4',
+    talk: [],
+  },
+  {
+    id: 'rq-letter-adel',
+    serviceId: 'employment-letter', choice: 'Standard letter', quantity: 1,
+    requester: 'Adel Rashid', team: 'Workplace',
+    reason: 'Bank wants proof of employment for a car loan.',
+    stage: 'delivered', age: 230, due: -9, handler: 'Lina Haddad', settled: 220, rating: 5,
+    place: 'Sent to adel.rashid@company.com',
+    talk: [],
+  },
+  {
+    id: 'rq-arm-nadia',
+    serviceId: 'monitor-arm', choice: 'Single arm', quantity: 1,
+    requester: 'Nadia Salem', team: 'Engineering',
+    reason: 'Getting the screen up off the desk before the next long review week.',
+    stage: 'delivered', age: 280, due: -11, handler: 'Yousef Mansour', settled: 260, rating: 4,
+    place: 'Desk 2-048 · Level 2',
+    talk: [
+      { author: 'Yousef Mansour', body: 'Under five hundred, so nobody had to sign it. Fitted the same afternoon.', ago: 262 },
+    ],
+  },
+  {
+    id: 'rq-parking-hassan',
+    serviceId: 'parking-permit', choice: 'Monthly bay', quantity: 1,
+    requester: 'Hassan Iqbal', team: 'Workplace',
+    reason: 'Early kitchen starts mean arriving before the first train.',
+    stage: 'delivered', age: 320, due: -12, handler: 'Adel Rashid', settled: 280, rating: 5,
+    place: 'Basement 1 · Bay 22',
+    signed: [{ ago: 300 }],
+    talk: [],
+  },
+  {
+    id: 'rq-locker-tamer',
+    serviceId: 'locker', choice: 'Standard locker', quantity: 1,
+    requester: 'Tamer Sobhy', team: 'Engineering',
+    reason: 'Somewhere to leave gym kit on the days I run in.',
+    stage: 'cancelled', age: 90, due: 3, settled: 70, place: 'Level 2 · Locker bank A',
+    talk: [
+      { author: 'Tamer Sobhy', body: 'Cancel this one — I inherited Omar’s locker when he moved floors.', ago: 70 },
+    ],
+  },
+];
+
+export const REQUESTS: Array<New<ServiceRequest> & { id: string }> = [...REQUEST_SEED]
+  .sort((a, b) => b.age - a.age)
+  .map(({ age, due, signed = [], talk, place, settled, ...request }, index) => {
+    const service = serviceById(request.serviceId)!;
+    const raisedAt = hoursAgo(age);
+    const unitCost = costOf(service, request.choice);
+
+    return {
+      ...request,
+      ref: `OMS-${2040 + index}`,
+      service: service.name,
+      category: service.category,
+      unitCost,
+      costCentre: costCentreOf(request.team),
+      raisedAt,
+      neededBy: day(due),
+      deliverTo: place ?? where(request.spaceId ?? ''),
+      settledAt: settled === undefined ? undefined : hoursAgo(settled),
+      chain: chainFor(service, request.requester, request.team, unitCost * request.quantity).map(
+        (step, position) => {
+          const mark = signed[position];
+          if (!mark) return step;
+          return {
+            ...step,
+            verdict: mark.refused ? ('declined' as const) : ('approved' as const),
+            at: hoursAgo(mark.ago),
+            note: mark.note,
+          };
+        },
+      ),
+      thread: [
+        { author: 'OmniServe', body: `${request.requester} asked for this`, at: raisedAt, kind: 'event' as const },
+        ...talk.map(({ ago, kind, ...entry }) => ({ ...entry, at: hoursAgo(ago), kind: kind ?? 'note' })),
+      ],
+    };
+  });

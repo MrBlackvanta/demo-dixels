@@ -3,7 +3,7 @@ import { cn } from '../../ui/utils';
 import { initials, timeAgo } from '../../../lib/format';
 import { slaState } from '../../../lib/sla';
 import type { Ticket } from '../../../lib/data';
-import { Rating } from './Rating';
+import { Rating } from '../../shell/Rating';
 import { SlaPill } from './SlaPill';
 import { PRIORITY_TONE, STATUS_LABEL, STATUS_TONE, TEAM_ICON } from './support';
 

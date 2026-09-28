@@ -1,13 +1,13 @@
 import type { LucideIcon } from 'lucide-react';
 
-interface QueueEmptyProps {
+interface EmptyStateProps {
   icon: LucideIcon;
   title: string;
   actionLabel: string;
   onAction: () => void;
 }
 
-export function QueueEmpty({ icon: Icon, title, actionLabel, onAction }: QueueEmptyProps) {
+export function EmptyState({ icon: Icon, title, actionLabel, onAction }: EmptyStateProps) {
   return (
     <div className="grid min-h-[16rem] place-items-center px-6 py-10 text-center">
       <div>

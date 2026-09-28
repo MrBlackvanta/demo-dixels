@@ -21,6 +21,7 @@ export function Modal({ onClose, children }: ModalProps) {
     document.body.style.overflow = 'hidden';
 
     const target =
+      surface.current?.querySelector<HTMLElement>('[data-autofocus]') ??
       surface.current?.querySelector<HTMLElement>('input:not([type="checkbox"]), textarea') ??
       surface.current?.querySelector<HTMLElement>(FOCUSABLE);
     target?.focus();

@@ -7,7 +7,7 @@ import { useCollection } from '../../../lib/store';
 import { CURRENT_USER, tickets as ticketsCol } from '../../../lib/data';
 import { dueFrom, slaLabel } from '../../../lib/sla';
 import type { Ticket, TicketPriority, TicketTeam } from '../../../lib/data';
-import { QueueEmpty } from './QueueEmpty';
+import { EmptyState } from '../../shell/EmptyState';
 import { TicketCard } from './TicketCard';
 import { TicketDialog } from './TicketDialog';
 import { TicketSheet } from './TicketSheet';
@@ -215,7 +215,7 @@ export function RequesterConsole() {
             })}
           </div>
         ) : shown.length === 0 ? (
-          <QueueEmpty
+          <EmptyState
             icon={Inbox}
             title={
               lens === 'live'
