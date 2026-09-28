@@ -66,6 +66,9 @@ export function Today() {
   const weekday = new Date().toLocaleDateString([], { weekday: 'long' });
 
   const openTasks = tasks.filter((task) => !task.done);
+  const myOpenTickets = tickets.filter(
+    (ticket) => ticket.requester === CURRENT_USER.name && ticket.status !== 'resolved',
+  );
   const expectedGuests = visits.filter(
     (visit) =>
       visit.date === todayKey() &&
@@ -80,7 +83,7 @@ export function Today() {
     { label: 'Meetings today', value: meetings.length, tone: 'brand' as const },
     { label: 'Guests expected', value: expectedGuests.length, tone: 'green' as const },
     { label: 'Open tasks', value: openTasks.length, tone: 'neutral' as const },
-    { label: 'Tickets in flight', value: tickets.filter((t) => t.status !== 'resolved').length, tone: 'neutral' as const },
+    { label: 'Your open requests', value: myOpenTickets.length, tone: 'neutral' as const },
   ];
 
   return (

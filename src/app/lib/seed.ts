@@ -1,4 +1,5 @@
 import { shiftDay, todayKey } from './format';
+import { dueFrom } from './sla';
 import type { Entity } from './store';
 import type {
   Badge,
@@ -12,6 +13,7 @@ import type {
   Space,
   Task,
   Ticket,
+  TicketEntryKind,
   Tribe,
   Visit,
 } from './data';
@@ -691,18 +693,497 @@ export const ORDERS: New<Order>[] = [
   },
 ];
 
-export const TICKETS: New<Ticket>[] = [
-  { subject: 'Projector not connecting in Orchid', category: 'AV', location: 'Level 5 · Orchid', priority: 'high', status: 'in-progress' },
-  { subject: 'Level 4 north wing feels warm', category: 'Comfort', location: 'Level 4', priority: 'medium', status: 'open' },
-  { subject: 'Badge reader rejecting on Level 6', category: 'Access', location: 'Level 6 · Lift lobby', priority: 'high', status: 'in-progress' },
-  { subject: 'Coffee machine leaking in the café', category: 'Catering', location: 'Level 1 · Smart Café', priority: 'medium', status: 'open' },
-  { subject: 'Standing desk motor jammed', category: 'Furniture', location: 'Level 4 · Desk 4-120', priority: 'low', status: 'in-progress' },
-  { subject: 'Wi-Fi drops in the Roof Garden', category: 'Network', location: 'Level 7', priority: 'medium', status: 'open' },
-  { subject: 'Whiteboard markers all dry in Cedar', category: 'Supplies', location: 'Level 3 · Cedar', priority: 'low', status: 'open' },
-  { subject: 'Forum microphone feedback', category: 'AV', location: 'Level 1 · The Forum', priority: 'high', status: 'resolved' },
-  { subject: 'Parking barrier slow to lift', category: 'Access', location: 'Basement 1', priority: 'low', status: 'resolved' },
-  { subject: 'Recycling bins not collected', category: 'Cleaning', location: 'Level 2', priority: 'low', status: 'resolved' },
+interface Line {
+  author: string;
+  body: string;
+  ago: number;
+  kind?: TicketEntryKind;
+}
+
+type TicketSeed = Omit<
+  New<Ticket>,
+  'ref' | 'location' | 'openedAt' | 'dueAt' | 'resolvedAt' | 'thread'
+> & {
+  id: string;
+  age: number;
+  talk: Line[];
+  location?: string;
+  closed?: number;
+};
+
+const TICKET_SEED: TicketSeed[] = [
+  {
+    id: 'tk-orchid-projector',
+    subject: 'Projector will not pick up my laptop in Orchid',
+    detail: 'USB-C shows the room as connected but the screen stays on the Dixels wallpaper. Tried both cables in the cubby.',
+    category: 'Meeting room AV', team: 'AV', spaceId: 'orchid',
+    priority: 'high', status: 'in-progress',
+    requester: 'Sara Ahmed', assignee: 'Ziad Morsi', age: 3,
+    talk: [
+      { author: 'Ziad Morsi', body: 'Picked this up — I am two floors away, give me ten minutes.', ago: 2.5 },
+      { author: 'Resolve', body: 'Ziad Morsi took the ticket', ago: 2.5, kind: 'event' },
+      { author: 'Ziad Morsi', body: 'The room switcher lost its firmware after the weekend patch. Reflashing it now.', ago: 1 },
+    ],
+  },
+  {
+    id: 'tk-lift-3',
+    subject: 'Lift 3 stopped between Level 2 and Level 3',
+    detail: 'Two people were inside. They are out and fine, but the car is still parked with the doors open.',
+    category: 'Building', team: 'Workplace', location: 'Lift core · Level 2',
+    priority: 'urgent', status: 'in-progress',
+    requester: 'Adel Rashid', assignee: 'Yousef Mansour', age: 0.5,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 0.45, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'Otis engineer is on site and the car is isolated. Lifts 1 and 2 are running normally.', ago: 0.3 },
+    ],
+  },
+  {
+    id: 'tk-lotus-display',
+    subject: 'Lotus display shows no signal over USB-C',
+    detail: 'HDMI works. USB-C charges the laptop but never mirrors.',
+    category: 'Display', team: 'AV', spaceId: 'lotus',
+    priority: 'high', status: 'open',
+    requester: 'Maya Fahmy', age: 1,
+    talk: [],
+  },
+  {
+    id: 'tk-cafe-grinder',
+    subject: 'Café grinder is leaking onto the counter',
+    detail: 'A slow drip from the base of the second grinder. The floor is getting slippery behind the bar.',
+    category: 'Café', team: 'Catering', location: 'Level 1 · Smart Café',
+    priority: 'high', status: 'in-progress',
+    requester: 'Salma Gaber', assignee: 'Hassan Iqbal', age: 2,
+    talk: [
+      { author: 'Resolve', body: 'Hassan Iqbal took the ticket', ago: 1.8, kind: 'event' },
+      { author: 'Hassan Iqbal', body: 'Grinder two is off and coned. Service call booked for the morning.', ago: 1.6 },
+    ],
+  },
+  {
+    id: 'tk-headset',
+    subject: 'Headset mic cuts out halfway through calls',
+    detail: 'Happens on both Teams and the browser dialler. Swapping to the laptop mic fixes it every time.',
+    category: 'Hardware', team: 'IT', location: 'Riyadh HQ',
+    priority: 'medium', status: 'open',
+    requester: 'Sara Ahmed', age: 2.5,
+    talk: [],
+  },
+  {
+    id: 'tk-laptop-fan',
+    subject: 'Laptop fan runs flat out all day',
+    detail: 'Starts within a few minutes of docking and never settles, even with everything closed.',
+    category: 'Laptop', team: 'IT', spaceId: 'desk-4-118',
+    priority: 'medium', status: 'open',
+    requester: 'Sara Ahmed', age: 4,
+    talk: [],
+  },
+  {
+    id: 'tk-level4-warm',
+    subject: 'Level 4 north wing is running warm again',
+    detail: 'Third afternoon this week. The reading by the window bank is about four degrees above the rest of the floor.',
+    category: 'Comfort', team: 'Workplace', location: 'Level 4 · North wing',
+    priority: 'medium', status: 'open',
+    requester: 'Karim Fouad', age: 5,
+    talk: [
+      { author: 'Karim Fouad', body: 'Six of us have moved to Level 3 for the afternoon.', ago: 4 },
+    ],
+  },
+  {
+    id: 'tk-boardroom-camera',
+    subject: 'Boardroom camera points at the wall',
+    detail: 'Preset one has drifted. Remote participants see the whiteboard and nobody else.',
+    category: 'Video call', team: 'AV', spaceId: 'boardroom',
+    priority: 'high', status: 'in-progress',
+    requester: 'Noura Sami', assignee: 'Ziad Morsi', age: 3,
+    talk: [
+      { author: 'Resolve', body: 'Ziad Morsi took the ticket', ago: 2.5, kind: 'event' },
+      { author: 'Ziad Morsi', body: 'Resetting the presets. I will book fifteen minutes in the room to check them properly.', ago: 2 },
+    ],
+  },
+  {
+    id: 'tk-vpn-drop',
+    subject: 'VPN drops every time I join a call',
+    detail: 'Reconnects within about thirty seconds but the call never recovers.',
+    category: 'Network', team: 'IT', location: 'Riyadh HQ',
+    priority: 'high', status: 'in-progress',
+    requester: 'Omar Zaki', assignee: 'Sami Kamal', age: 6,
+    talk: [
+      { author: 'Resolve', body: 'Sami Kamal took the ticket', ago: 5.5, kind: 'event' },
+      { author: 'Sami Kamal', body: 'Your client is two releases behind. Pushing the update to your machine now.', ago: 5 },
+      { author: 'Omar Zaki', body: 'Installed. Holding so far on a thirty minute call.', ago: 2 },
+    ],
+  },
+  {
+    id: 'tk-badge-l6',
+    subject: 'Badge reader rejects me on Level 6',
+    detail: 'Works everywhere else in the building. Level 6 flashes red three times.',
+    category: 'Badge', team: 'Security', location: 'Level 6 · Lift lobby',
+    priority: 'high', status: 'in-progress',
+    requester: 'Hana Youssef', assignee: 'Adel Rashid', age: 7,
+    talk: [
+      { author: 'Resolve', body: 'Adel Rashid took the ticket', ago: 6.5, kind: 'event' },
+      { author: 'Adel Rashid', body: 'Your profile is missing the Level 6 group. Added — try it in five minutes.', ago: 6 },
+      { author: 'Hana Youssef', body: 'Still red. I am on the stairs for now.', ago: 3 },
+    ],
+  },
+  {
+    id: 'tk-monitor-dead',
+    subject: 'Second monitor at 4-122 does not wake',
+    detail: 'Power light is on but the panel stays black until you unplug it at the wall.',
+    category: 'Hardware', team: 'IT', spaceId: 'desk-4-122',
+    priority: 'medium', status: 'open',
+    requester: 'Yara Sabry', age: 6,
+    talk: [],
+  },
+  {
+    id: 'tk-roof-wifi',
+    subject: 'Wi-Fi drops out in the Roof Garden',
+    detail: 'Fine at the doors, unusable past the planters. It caught out the whole yoga session.',
+    category: 'Network', team: 'IT', spaceId: 'roof-garden',
+    priority: 'medium', status: 'open',
+    requester: 'Mona Darwish', age: 6,
+    talk: [
+      { author: 'Mona Darwish', body: 'Happens every week at the same spot, so it is not the crowd.', ago: 5 },
+    ],
+  },
+  {
+    id: 'tk-atrium-chairs',
+    subject: 'Six chairs missing from the Atrium',
+    detail: 'Set up for thirty, counted twenty-four. Training session is booked there tomorrow.',
+    category: 'Furniture', team: 'Workplace', spaceId: 'atrium',
+    priority: 'medium', status: 'in-progress',
+    requester: 'Salma Gaber', assignee: 'Waleed Tantawy', age: 7,
+    talk: [
+      { author: 'Resolve', body: 'Waleed Tantawy took the ticket', ago: 6.5, kind: 'event' },
+      { author: 'Waleed Tantawy', body: 'They went to the Forum for the all-hands. Bringing them back this evening.', ago: 6 },
+    ],
+  },
+  {
+    id: 'tk-phish-report',
+    subject: 'Phishing email pretending to be payroll',
+    detail: 'Asks you to re-enter bank details on a lookalike domain. Four people in Finance received it.',
+    category: 'Account', team: 'IT', location: 'Riyadh HQ',
+    priority: 'urgent', status: 'resolved',
+    requester: 'Tarek Aziz', assignee: 'Sami Kamal', age: 12, closed: 11, rating: 5,
+    talk: [
+      { author: 'Resolve', body: 'Sami Kamal took the ticket', ago: 11.8, kind: 'event' },
+      { author: 'Sami Kamal', body: 'Domain is blocked and the message is pulled from every mailbox. Nobody clicked.', ago: 11.2 },
+      { author: 'Resolve', body: 'Sami Kamal resolved the ticket', ago: 11, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-pantry-milk',
+    subject: 'Oat milk gone by 10am in the Level 5 pantry',
+    detail: 'Fourth day running. The other pantries still have plenty at lunchtime.',
+    category: 'Pantry', team: 'Catering', location: 'Level 5 · Pantry',
+    priority: 'low', status: 'open',
+    requester: 'Reem Othman', age: 13,
+    talk: [],
+  },
+  {
+    id: 'tk-summit-av',
+    subject: 'Tech Summit needs a second mic in the Forum',
+    detail: 'One handheld will not cover a panel of four. Asking early so it is not a morning-of scramble.',
+    category: 'Meeting room AV', team: 'AV', spaceId: 'forum',
+    priority: 'medium', status: 'in-progress',
+    requester: 'Nadia Salem', assignee: 'Ziad Morsi', age: 15,
+    talk: [
+      { author: 'Resolve', body: 'Ziad Morsi took the ticket', ago: 14, kind: 'event' },
+      { author: 'Ziad Morsi', body: 'Two lapels and a spare handheld reserved against the Summit booking.', ago: 13 },
+    ],
+  },
+  {
+    id: 'tk-pod2a-noise',
+    subject: 'Pod 2-A is not soundproof any more',
+    detail: 'You can follow a conversation in the corridor word for word. The door seal looks torn.',
+    category: 'Comfort', team: 'Workplace', spaceId: 'pod-2a',
+    priority: 'medium', status: 'open',
+    requester: 'Ziad Morsi', age: 16,
+    talk: [],
+  },
+  {
+    id: 'tk-printer-l3',
+    subject: 'Level 3 printer jams on every duplex job',
+    detail: 'Single sided is fine. Anything double sided jams in tray two within a few pages.',
+    category: 'Hardware', team: 'IT', location: 'Level 3 · Print room',
+    priority: 'medium', status: 'in-progress',
+    requester: 'Laila Mostafa', assignee: 'Bassem Riad', age: 14,
+    talk: [
+      { author: 'Resolve', body: 'Bassem Riad took the ticket', ago: 13.5, kind: 'event' },
+      { author: 'Bassem Riad', body: 'Duplex roller is worn. Part ordered, two working days.', ago: 13 },
+    ],
+  },
+  {
+    id: 'tk-cedar-markers',
+    subject: 'Every marker in Cedar is dry',
+    detail: 'All six. The eraser has gone missing too.',
+    category: 'Supplies', team: 'Workplace', spaceId: 'cedar',
+    priority: 'low', status: 'open',
+    requester: 'Rana Khalil', age: 20,
+    talk: [],
+  },
+  {
+    id: 'tk-slack-sso',
+    subject: 'Slack signs me out every morning',
+    detail: 'Only on the desktop app. The browser tab stays signed in all day.',
+    category: 'Software', team: 'IT', location: 'Riyadh HQ',
+    priority: 'medium', status: 'waiting',
+    requester: 'Khaled Nour', assignee: 'Sami Kamal', age: 21,
+    talk: [
+      { author: 'Resolve', body: 'Sami Kamal took the ticket', ago: 20, kind: 'event' },
+      { author: 'Sami Kamal', body: 'Can you send me the app version from About? It should be under Help.', ago: 19 },
+      { author: 'Resolve', body: 'Waiting on Khaled Nour', ago: 19, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-guest-wifi',
+    subject: 'Guest Wi-Fi code not working for the Northwind visitors',
+    detail: 'Three guests in reception and none of the codes on the badge slips are accepted.',
+    category: 'Network', team: 'IT', location: 'Level 1 · Reception',
+    priority: 'high', status: 'resolved',
+    requester: 'Hana Youssef', assignee: 'Bassem Riad', age: 22, closed: 21, rating: 5,
+    talk: [
+      { author: 'Resolve', body: 'Bassem Riad took the ticket', ago: 21.8, kind: 'event' },
+      { author: 'Bassem Riad', body: 'The codes expired at midnight. New batch printed and handed to the desk.', ago: 21.2 },
+      { author: 'Hana Youssef', body: 'All three are online. Thank you for the speed.', ago: 21.1 },
+      { author: 'Resolve', body: 'Bassem Riad resolved the ticket', ago: 21, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-yoga-mats',
+    subject: 'Yoga mats in the Lab smell damp',
+    detail: 'They have been rolled up wet. Half the class went without one this morning.',
+    category: 'Cleaning', team: 'Workplace', spaceId: 'lab',
+    priority: 'low', status: 'open',
+    requester: 'Mona Darwish', age: 21,
+    talk: [],
+  },
+  {
+    id: 'tk-desk-motor',
+    subject: 'Standing desk motor jammed halfway',
+    detail: 'It will not go up or down, and it is stuck at an awkward height to work at.',
+    category: 'Furniture', team: 'Workplace', spaceId: 'desk-4-120',
+    priority: 'low', status: 'waiting',
+    requester: 'Sara Ahmed', assignee: 'Yousef Mansour', age: 26,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 25, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'We can swap the frame on Thursday. Are you happy to hot desk at 4-122 until then?', ago: 22 },
+      { author: 'Resolve', body: 'Waiting on Sara Ahmed', ago: 22, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-sso-locked',
+    subject: 'Locked out of SSO after a password reset',
+    detail: 'The reset went through but every app now bounces me back to the login screen.',
+    category: 'Account', team: 'IT', location: 'Riyadh HQ',
+    priority: 'urgent', status: 'resolved',
+    requester: 'Dina Hafez', assignee: 'Bassem Riad', age: 27, closed: 26.5, rating: 5,
+    talk: [
+      { author: 'Resolve', body: 'Bassem Riad took the ticket', ago: 26.9, kind: 'event' },
+      { author: 'Bassem Riad', body: 'Your sessions were still holding the old token. Cleared them — sign in once more.', ago: 26.6 },
+      { author: 'Resolve', body: 'Bassem Riad resolved the ticket', ago: 26.5, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-orchid-booking',
+    subject: 'My Orchid booking vanished from the calendar',
+    detail: 'It was confirmed in SpaceOS yesterday and the invite is gone this morning.',
+    category: 'Software', team: 'IT', spaceId: 'orchid',
+    priority: 'medium', status: 'resolved',
+    requester: 'Sara Ahmed', assignee: 'Bassem Riad', age: 29, closed: 27, rating: 5,
+    talk: [
+      { author: 'Resolve', body: 'Bassem Riad took the ticket', ago: 28.5, kind: 'event' },
+      { author: 'Bassem Riad', body: 'A calendar sync retried and dropped the invite, not the booking. SpaceOS still had it — resent.', ago: 27.4 },
+      { author: 'Sara Ahmed', body: 'It is back, thank you.', ago: 27.1 },
+      { author: 'Resolve', body: 'Bassem Riad resolved the ticket', ago: 27, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-figma-seat',
+    subject: 'Need a Figma editor seat for the new designer',
+    detail: 'She starts Monday and the licence pool shows none free.',
+    category: 'Software', team: 'IT', location: 'Riyadh HQ',
+    priority: 'medium', status: 'waiting',
+    requester: 'Sara Ahmed', assignee: 'Bassem Riad', age: 30,
+    talk: [
+      { author: 'Resolve', body: 'Bassem Riad took the ticket', ago: 29, kind: 'event' },
+      { author: 'Bassem Riad', body: 'Finance needs a cost centre before I can add a seat. Which one should I bill it to?', ago: 25 },
+      { author: 'Resolve', body: 'Waiting on Sara Ahmed', ago: 25, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-forum-mic',
+    subject: 'Forum microphone feeds back at the stage',
+    detail: 'A hard squeal whenever the speaker steps within a metre of the left column.',
+    category: 'Meeting room AV', team: 'AV', spaceId: 'forum',
+    priority: 'urgent', status: 'resolved',
+    requester: 'Noura Sami', assignee: 'Ziad Morsi', age: 30, closed: 29.5, rating: 5,
+    talk: [
+      { author: 'Resolve', body: 'Ziad Morsi took the ticket', ago: 29.9, kind: 'event' },
+      { author: 'Ziad Morsi', body: 'Notched the offending band and moved the left fill back a metre. Clean through a full walk of the stage.', ago: 29.6 },
+      { author: 'Resolve', body: 'Ziad Morsi resolved the ticket', ago: 29.5, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-skyline-firedoor',
+    subject: 'Catering trolley left blocking the Skyline fire door',
+    detail: 'Found it wedged against the push bar during the evening walk.',
+    category: 'Access', team: 'Security', spaceId: 'skyline',
+    priority: 'high', status: 'resolved',
+    requester: 'Amira Shafik', assignee: 'Adel Rashid', age: 33, closed: 32, rating: 4,
+    talk: [
+      { author: 'Resolve', body: 'Adel Rashid took the ticket', ago: 32.8, kind: 'event' },
+      { author: 'Adel Rashid', body: 'Moved and logged. Catering briefed on the exit route for Level 6 events.', ago: 32.2 },
+      { author: 'Resolve', body: 'Adel Rashid resolved the ticket', ago: 32, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-expense-tool',
+    subject: 'Expense tool rejects receipts over 2MB',
+    detail: 'Every phone photo is bigger than that, so nothing uploads without editing it first.',
+    category: 'Software', team: 'IT', location: 'Riyadh HQ',
+    priority: 'low', status: 'in-progress',
+    requester: 'Waleed Tantawy', assignee: 'Sami Kamal', age: 35,
+    talk: [
+      { author: 'Resolve', body: 'Sami Kamal took the ticket', ago: 34, kind: 'event' },
+      { author: 'Sami Kamal', body: 'Raised with the vendor. In the meantime the mobile app compresses on upload.', ago: 30 },
+    ],
+  },
+  {
+    id: 'tk-crit-display',
+    subject: 'Design crit needs the Lab display cabled for two laptops',
+    detail: 'We switch presenters every ten minutes and one cable will not keep up.',
+    category: 'Display', team: 'AV', spaceId: 'lab',
+    priority: 'low', status: 'resolved',
+    requester: 'Sara Ahmed', assignee: 'Ziad Morsi', age: 38, closed: 34,
+    talk: [
+      { author: 'Resolve', body: 'Ziad Morsi took the ticket', ago: 37, kind: 'event' },
+      { author: 'Ziad Morsi', body: 'Two-input switcher fitted and both cables labelled. It stays in the room.', ago: 34.3 },
+      { author: 'Resolve', body: 'Ziad Morsi resolved the ticket', ago: 34, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-maple-heat',
+    subject: 'Maple is freezing every afternoon',
+    detail: 'People keep their coats on through the two o clock slot.',
+    category: 'Comfort', team: 'Workplace', spaceId: 'maple',
+    priority: 'low', status: 'waiting',
+    requester: 'Fadi Barakat', assignee: 'Yousef Mansour', age: 40,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 39, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'I can raise the setpoint two degrees, but it also serves Lotus. Is Lotus comfortable?', ago: 31 },
+      { author: 'Resolve', body: 'Waiting on Fadi Barakat', ago: 31, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-recycling',
+    subject: 'Recycling bins not collected on Level 2',
+    detail: 'Both bays overflowed by Tuesday lunchtime.',
+    category: 'Cleaning', team: 'Workplace', location: 'Level 2',
+    priority: 'low', status: 'resolved',
+    requester: 'Farah Nabil', assignee: 'Yousef Mansour', age: 44, closed: 36, rating: 3,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 43, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'Collection missed a round. Cleared, and Level 2 is back on the daily route.', ago: 36.4 },
+      { author: 'Resolve', body: 'Yousef Mansour resolved the ticket', ago: 36, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-l1-doors',
+    subject: 'Level 1 revolving door stalls on entry',
+    detail: 'It stops dead when two people enter together, then restarts after a few seconds.',
+    category: 'Building', team: 'Workplace', location: 'Level 1 · Main entrance',
+    priority: 'high', status: 'resolved',
+    requester: 'Salma Gaber', assignee: 'Yousef Mansour', age: 47, closed: 45, rating: 4,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 46.5, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'Safety sensor was reading the floor mat. Realigned and tested through a busy hour.', ago: 45.3 },
+      { author: 'Resolve', body: 'Yousef Mansour resolved the ticket', ago: 45, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-parking-barrier',
+    subject: 'Parking barrier takes twenty seconds to lift',
+    detail: 'Long enough that the queue backs up onto the ramp at peak.',
+    category: 'Parking', team: 'Security', location: 'Basement 1',
+    priority: 'low', status: 'resolved',
+    requester: 'Tarek Aziz', assignee: 'Adel Rashid', age: 50, closed: 30, rating: 4,
+    talk: [
+      { author: 'Resolve', body: 'Adel Rashid took the ticket', ago: 49, kind: 'event' },
+      { author: 'Adel Rashid', body: 'Plate reader was retrying against the old registry. Repointed it — lift is under three seconds now.', ago: 30.5 },
+      { author: 'Resolve', body: 'Adel Rashid resolved the ticket', ago: 30, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-desk-118-chair',
+    subject: 'Chair at 4-118 will not hold its height',
+    detail: 'It sinks to the bottom within about a minute of sitting down.',
+    category: 'Furniture', team: 'Workplace', spaceId: 'desk-4-118',
+    priority: 'low', status: 'resolved',
+    requester: 'Sara Ahmed', assignee: 'Yousef Mansour', age: 55, closed: 48,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 54, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'Gas lift had gone. Replaced with a new cylinder rather than swapping the whole chair.', ago: 48.4 },
+      { author: 'Resolve', body: 'Yousef Mansour resolved the ticket', ago: 48, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-visitor-parking',
+    subject: 'Visitor parking bay double-booked',
+    detail: 'Two vendors arrived for the same bay twenty minutes apart.',
+    category: 'Parking', team: 'Security', location: 'Basement 1',
+    priority: 'medium', status: 'resolved',
+    requester: 'Hana Youssef', assignee: 'Adel Rashid', age: 60, closed: 46, rating: 3,
+    talk: [
+      { author: 'Resolve', body: 'Adel Rashid took the ticket', ago: 59, kind: 'event' },
+      { author: 'Adel Rashid', body: 'Two bays were held under one visit record. Split them and released a third for overflow.', ago: 46.5 },
+      { author: 'Resolve', body: 'Adel Rashid resolved the ticket', ago: 46, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-jasmine-tv',
+    subject: 'Jasmine TV remote has no batteries',
+    detail: 'The back cover is missing as well, so they may have been taken.',
+    category: 'Display', team: 'AV', spaceId: 'jasmine',
+    priority: 'low', status: 'resolved',
+    requester: 'Tamer Sobhy', assignee: 'Ziad Morsi', age: 66, closed: 58, rating: 5,
+    talk: [
+      { author: 'Resolve', body: 'Ziad Morsi took the ticket', ago: 65, kind: 'event' },
+      { author: 'Ziad Morsi', body: 'New remote tethered to the wall plate. Spare batteries in the cubby.', ago: 58.3 },
+      { author: 'Resolve', body: 'Ziad Morsi resolved the ticket', ago: 58, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-studio3-whiteboard',
+    subject: 'Studio 3 whiteboard will not wipe clean',
+    detail: 'Someone has used a permanent marker across most of it.',
+    category: 'Cleaning', team: 'Workplace', spaceId: 'studio-3',
+    priority: 'low', status: 'resolved',
+    requester: 'Nadia Salem', assignee: 'Yousef Mansour', age: 70, closed: 52, rating: 4,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 69, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'Cleaned with solvent and resurfaced. Permanent markers are out of the supply cupboard now.', ago: 52.4 },
+      { author: 'Resolve', body: 'Yousef Mansour resolved the ticket', ago: 52, kind: 'event' },
+    ],
+  },
 ];
+
+export const TICKETS: Array<New<Ticket> & { id: string }> = [...TICKET_SEED]
+  .sort((a, b) => b.age - a.age)
+  .map(({ age, closed, talk, location, ...ticket }, index) => {
+    const openedAt = hoursAgo(age);
+    return {
+      ...ticket,
+      ref: `RSV-${1040 + index}`,
+      location: location ?? where(ticket.spaceId ?? ''),
+      openedAt,
+      dueAt: dueFrom(openedAt, ticket.priority),
+      resolvedAt: closed === undefined ? undefined : hoursAgo(closed),
+      thread: [
+        { author: 'Resolve', body: `${ticket.requester} raised this request`, at: openedAt, kind: 'event' as const },
+        ...talk.map(({ ago, kind, ...entry }) => ({ ...entry, at: hoursAgo(ago), kind: kind ?? 'note' })),
+      ],
+    };
+  });
 
 export const TASKS: New<Task>[] = [
   { title: 'Approve Northwind visit agenda', due: 'Today · 12:00', effort: 'quick', done: false },
@@ -726,7 +1207,9 @@ export const NOTIFICATIONS: New<Notification>[] = [
   { title: 'Your flat white is on the way', body: 'Delivering to Studio 3', product: 'Nourish', read: true },
   { title: 'Orchid needs your approval', body: 'Khaled Nour requested 16:00–17:00', product: 'SpaceOS', read: true },
   { title: 'Q4 All-Hands is tomorrow', body: 'The Forum · 14:00 · attendance expected', product: 'Gather', read: true },
-  { title: 'Projector ticket picked up', body: 'AV team is on Level 5 now', product: 'Resolve', read: true },
+  { title: 'Ziad Morsi picked up your projector ticket', body: 'Orchid · reflashing the room switcher now', product: 'Resolve', read: false },
+  { title: 'Bassem Riad is waiting on you', body: 'The Figma seat needs a cost centre before he can order it', product: 'Resolve', read: false },
+  { title: 'Your chair at 4-118 was fixed', body: 'New gas lift fitted · rate how it went', product: 'Resolve', read: true },
   { title: 'Desk 4-120 is offline', body: 'Monitor arm replacement — back Thursday', product: 'SpaceOS', read: true },
   { title: 'Nadia Salem posted in Tech Talks', body: 'The agents deep dive deck is up', product: 'Tribes', read: false },
   { title: 'Two people want to join Giving Back', body: 'Tarek Aziz and Yara Sabry are waiting', product: 'Tribes', read: false },

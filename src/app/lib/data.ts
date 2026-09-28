@@ -191,12 +191,38 @@ export interface CartLine extends Entity {
   quantity: number;
 }
 
+export type TicketTeam = 'IT' | 'Workplace' | 'AV' | 'Security' | 'Catering';
+
+export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export type TicketStatus = 'open' | 'in-progress' | 'waiting' | 'resolved';
+
+export type TicketEntryKind = 'note' | 'event';
+
+export interface TicketEntry {
+  author: string;
+  body: string;
+  at: string;
+  kind: TicketEntryKind;
+}
+
 export interface Ticket extends Entity {
+  ref: string;
   subject: string;
+  detail: string;
   category: string;
+  team: TicketTeam;
   location: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'open' | 'in-progress' | 'resolved';
+  priority: TicketPriority;
+  status: TicketStatus;
+  requester: string;
+  openedAt: string;
+  dueAt: string;
+  thread: TicketEntry[];
+  assignee?: string;
+  spaceId?: string;
+  resolvedAt?: string;
+  rating?: number;
 }
 
 export interface Task extends Entity {
@@ -298,7 +324,7 @@ export function seedDemoData(): void {
     },
     {
       col: tickets as never,
-      rows: TICKETS.map(row),
+      rows: TICKETS.map(keyed),
     },
     {
       col: tasks as never,

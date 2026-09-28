@@ -6,6 +6,7 @@ import {
   Calendar,
   Coffee,
   Compass,
+  ConciergeBell,
   FileText,
   Image,
   LayoutGrid,
@@ -59,8 +60,8 @@ export const PRODUCTS = {
   tribes: { id: 'tribes', name: 'Tribes', descriptor: 'Communities', path: '/tribes', icon: MessageSquare, family: 'people' },
 
   nourish: { id: 'nourish', name: 'Nourish', descriptor: 'Smart café', path: '/nourish', icon: Coffee, family: 'services' },
-  omniserve: { id: 'omniserve', name: 'OmniServe', descriptor: 'Service hub', path: '/omniserve', icon: LifeBuoy, family: 'services' },
-  resolve: { id: 'resolve', name: 'Resolve', descriptor: 'Support center', path: '/resolve', icon: Sparkles, family: 'services' },
+  omniserve: { id: 'omniserve', name: 'OmniServe', descriptor: 'Service hub', path: '/omniserve', icon: ConciergeBell, family: 'services' },
+  resolve: { id: 'resolve', name: 'Resolve', descriptor: 'Support center', path: '/resolve', icon: LifeBuoy, family: 'services' },
   taskflow: { id: 'taskflow', name: 'TaskFlow', descriptor: 'Work management', path: '/taskflow', icon: Zap, family: 'services' },
   calendar: { id: 'calendar', name: 'My Calendar', descriptor: 'Day manager', path: '/calendar', icon: Calendar, family: 'services' },
 
@@ -96,7 +97,7 @@ export const NAV_BY_PERSONA: Record<Persona, NavGroup[]> = {
   ],
   Admin: [
     { title: 'Overview', items: [P.dashboard, P.analytics, P.settings] },
-    { title: 'Operations', items: [P.buildingops, P.twinspace, P.security, P.vmsadmin] },
+    { title: 'Operations', items: [P.buildingops, P.twinspace, P.resolve, P.security, P.vmsadmin] },
     { title: 'Content & experience', items: [P.content, P.vault, P.livecanvas, P.tribes] },
     { title: 'Platform', items: [P.identity, P.flow, P.nexus] },
   ],
