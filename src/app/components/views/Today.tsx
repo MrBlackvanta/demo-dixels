@@ -65,7 +65,9 @@ export function Today() {
   const weekday = new Date().toLocaleDateString([], { weekday: 'long' });
 
   const openTasks = tasks.filter((task) => !task.done);
-  const expectedGuests = visits.filter((visit) => visit.status !== 'checked-out');
+  const expectedGuests = visits.filter(
+    (visit) => visit.status === 'invited' || visit.status === 'pre-registered' || visit.status === 'checked-in',
+  );
   const liveOrder = orders.find((order) => order.status !== 'delivered');
 
   const stats = [

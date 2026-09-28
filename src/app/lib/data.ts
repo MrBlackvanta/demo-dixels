@@ -23,6 +23,15 @@ export interface Booking extends Entity {
   status: 'confirmed' | 'pending' | 'cancelled';
 }
 
+export type VisitStatus =
+  | 'invited'
+  | 'pre-registered'
+  | 'checked-in'
+  | 'checked-out'
+  | 'cancelled';
+
+export type VisitKind = 'Guest' | 'VIP' | 'Interview' | 'Vendor' | 'Contractor';
+
 export interface Visit extends Entity {
   guest: string;
   company: string;
@@ -30,7 +39,28 @@ export interface Visit extends Entity {
   date: string;
   time: string;
   purpose: string;
-  status: 'invited' | 'pre-registered' | 'checked-in' | 'checked-out';
+  status: VisitStatus;
+  email?: string;
+  kind?: VisitKind;
+  location?: string;
+  parking?: boolean;
+  notes?: string;
+  code?: string;
+  badge?: string;
+  arrivedAt?: string;
+  leftAt?: string;
+}
+
+export interface Badge extends Entity {
+  number: string;
+  visitId?: string;
+}
+
+export interface Delivery extends Entity {
+  recipient: string;
+  carrier: string;
+  tracking: string;
+  collected: boolean;
 }
 
 export interface OrderLine {
@@ -84,6 +114,8 @@ export interface Notification extends Entity {
 export const meetings = collection<Meeting>('meetings');
 export const bookings = collection<Booking>('bookings');
 export const visits = collection<Visit>('visits');
+export const badges = collection<Badge>('badges');
+export const deliveries = collection<Delivery>('deliveries');
 export const orders = collection<Order>('orders');
 export const cart = collection<CartLine>('cart');
 export const tickets = collection<Ticket>('tickets');
@@ -109,7 +141,15 @@ const stamp = (offsetMinutes: number): string => {
   return d.toISOString();
 };
 
-const today = (): string => new Date().toISOString().slice(0, 10);
+const dayOffset = (days: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
+const today = (): string => dayOffset(0);
+const tomorrow = (): string => dayOffset(1);
+const yesterday = (): string => dayOffset(-1);
 
 const row = <T,>(data: T, i: number) => ({
   ...data,
@@ -139,9 +179,30 @@ export function seedDemoData(): void {
     {
       col: visits as never,
       rows: [
-        { guest: 'Layla Nasser', company: 'Northwind', host: 'Sara Ahmed', date: today(), time: '13:00', purpose: 'Quarterly review', status: 'pre-registered' },
-        { guest: 'Omar Haddad', company: 'Vertex Labs', host: 'Sara Ahmed', date: today(), time: '15:30', purpose: 'Partnership intro', status: 'invited' },
-        { guest: 'Mei Chen', company: 'Aurora', host: 'Karim Fouad', date: today(), time: '09:15', purpose: 'Onsite audit', status: 'checked-in' },
+        { guest: 'Layla Nasser', company: 'Northwind', host: 'Sara Ahmed', date: today(), time: '13:00', purpose: 'Quarterly review', status: 'pre-registered', email: 'layla.nasser@northwind.com', kind: 'VIP', location: 'Orchid · Level 5', parking: true, code: 'VF-4180' },
+        { guest: 'Omar Haddad', company: 'Vertex Labs', host: 'Sara Ahmed', date: today(), time: '15:30', purpose: 'Partnership intro', status: 'invited', email: 'o.haddad@vertexlabs.io', kind: 'Guest', location: 'Studio 3 · Level 2', parking: false, code: 'VF-7723' },
+        { guest: 'Mei Chen', company: 'Aurora', host: 'Karim Fouad', date: today(), time: '09:15', purpose: 'Onsite audit', status: 'checked-in', email: 'mei.chen@aurora.co', kind: 'Vendor', location: 'Level 4 lounge', parking: false, code: 'VF-2094', badge: '104', arrivedAt: stamp(-95) },
+        { guest: 'Daniel Okafor', company: 'Helios Group', host: 'Sara Ahmed', date: tomorrow(), time: '11:00', purpose: 'Design portfolio review', status: 'invited', email: 'd.okafor@helios.group', kind: 'Interview', location: 'Studio 3 · Level 2', parking: false, code: 'VF-5516' },
+        { guest: 'Priya Raman', company: 'Meridian', host: 'Sara Ahmed', date: yesterday(), time: '14:00', purpose: 'Contract signing', status: 'checked-out', email: 'praman@meridian.com', kind: 'Guest', location: 'Orchid · Level 5', parking: true, code: 'VF-3341', arrivedAt: stamp(-1_500), leftAt: stamp(-1_380) },
+      ].map(row),
+    },
+    {
+      col: badges as never,
+      rows: [
+        { number: '101' },
+        { number: '102' },
+        { number: '103' },
+        { number: '104', visitId: 'seed_2' },
+        { number: '105' },
+        { number: 'VIP-01' },
+      ].map(row),
+    },
+    {
+      col: deliveries as never,
+      rows: [
+        { recipient: 'Sara Ahmed', carrier: 'DHL', tracking: '7850 0212 3456', collected: false },
+        { recipient: 'Karim Fouad', carrier: 'Aramex', tracking: '4471 9930 1122', collected: false },
+        { recipient: 'Nadia Salem', carrier: 'FedEx', tracking: '9920 4417 8830', collected: true },
       ].map(row),
     },
     {

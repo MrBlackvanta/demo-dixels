@@ -188,6 +188,7 @@
   --color-ink-muted: var(--dx-neutral-500);
   --color-ink-subtle: var(--dx-neutral-400);
   --color-line: var(--dx-neutral-200);
+  --color-line-strong: var(--dx-neutral-300);
   --color-soft: var(--dx-neutral-100);
 
   --color-nt-0: var(--dx-neutral-0);

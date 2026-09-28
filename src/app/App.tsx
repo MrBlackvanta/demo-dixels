@@ -14,6 +14,10 @@ const Nourish = lazy(() =>
   import('./components/views/nourish/Nourish').then((m) => ({ default: m.Nourish })),
 );
 
+const VisitFlow = lazy(() =>
+  import('./components/views/visitflow/VisitFlow').then((m) => ({ default: m.VisitFlow })),
+);
+
 const load = {
   calendar: lazy(() => import('./components/dixels2/CoreCalendar').then((m) => ({ default: m.CoreCalendar }))),
   taskflow: lazy(() => import('./components/dixels2/WorkloadManagement').then((m) => ({ default: m.WorkloadManagement }))),
@@ -22,7 +26,6 @@ const load = {
   pathfinder: lazy(() => import('./components/dixels2/CampusGuideView').then((m) => ({ default: m.CampusGuideView }))),
   twinspace: lazy(() => import('./components/dixels2/SpaceManagement').then((m) => ({ default: m.SpaceManagement }))),
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
-  visitflow: lazy(() => import('./components/dixels2/VmsHost').then((m) => ({ default: m.VmsHost }))),
   vmsadmin: lazy(() => import('./components/dixels2/VmsAdmin').then((m) => ({ default: m.VmsAdmin }))),
   security: lazy(() => import('./components/dixels2/VmsSecurity').then((m) => ({ default: m.VmsSecurity }))),
   gather: lazy(() => import('./components/dixels2/EventsView').then((m) => ({ default: m.EventsView }))),
@@ -70,7 +73,7 @@ function App() {
                 <Route path="/pathfinder" element={<LegacyModule id="pathfinder" Component={load.pathfinder} />} />
                 <Route path="/twinspace" element={<LegacyModule id="twinspace" Component={load.twinspace} padded />} />
                 <Route path="/building-ops" element={<LegacyModule id="buildingops" Component={load.buildingops} />} />
-                <Route path="/visitflow" element={<LegacyModule id="visitflow" Component={load.visitflow} />} />
+                <Route path="/visitflow" element={<VisitFlow />} />
                 <Route path="/visitflow/admin" element={<LegacyModule id="vmsadmin" Component={load.vmsadmin} />} />
                 <Route path="/security" element={<LegacyModule id="security" Component={load.security} />} />
                 <Route path="/gather" element={<LegacyModule id="gather" Component={load.gather} />} />

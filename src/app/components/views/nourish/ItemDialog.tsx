@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { cn } from '../../ui/utils';
+import { Modal } from '../../shell/Modal';
 import { defaultSelection, describeSelection, money, priceFor } from './menu';
 import type { MenuItem } from './menu';
 
@@ -14,30 +15,15 @@ export function ItemDialog({ item, onClose, onAdd }: ItemDialogProps) {
   const [selection, setSelection] = useState(() => defaultSelection(item));
   const [quantity, setQuantity] = useState(1);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   const unitPrice = priceFor(item, selection);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-nt-950/45 backdrop-blur-[2px]"
-      />
-
+    <Modal onClose={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="item-dialog-title"
-        className="dx-card relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-b-none sm:rounded-b-lg"
+        className="dx-card relative flex w-full max-w-md flex-col overflow-hidden rounded-b-none sm:rounded-b-lg"
       >
         <div className="relative h-36 shrink-0 overflow-hidden bg-nt-100">
           <div className="absolute inset-0 bg-gradient-to-br from-brand-100 via-nt-100 to-grn-100" aria-hidden="true" />
@@ -138,6 +124,6 @@ export function ItemDialog({ item, onClose, onAdd }: ItemDialogProps) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
