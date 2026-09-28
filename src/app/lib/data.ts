@@ -33,12 +33,30 @@ export interface Visit extends Entity {
   status: 'invited' | 'pre-registered' | 'checked-in' | 'checked-out';
 }
 
+export interface OrderLine {
+  menuItemId: string;
+  name: string;
+  options: string;
+  unitPrice: number;
+  quantity: number;
+}
+
 export interface Order extends Entity {
   item: string;
   options: string;
   destination: string;
   price: number;
   status: 'placed' | 'preparing' | 'on-the-way' | 'delivered';
+  lines?: OrderLine[];
+  note?: string;
+}
+
+export interface CartLine extends Entity {
+  menuItemId: string;
+  name: string;
+  options: string;
+  unitPrice: number;
+  quantity: number;
 }
 
 export interface Ticket extends Entity {
@@ -67,6 +85,7 @@ export const meetings = collection<Meeting>('meetings');
 export const bookings = collection<Booking>('bookings');
 export const visits = collection<Visit>('visits');
 export const orders = collection<Order>('orders');
+export const cart = collection<CartLine>('cart');
 export const tickets = collection<Ticket>('tickets');
 export const tasks = collection<Task>('tasks');
 export const notifications = collection<Notification>('notifications');
@@ -74,6 +93,7 @@ export const notifications = collection<Notification>('notifications');
 export const persona = scalar<Persona>('persona', 'Employee');
 export const authed = scalar<boolean>('authed', false);
 export const sidebarOpen = scalar<boolean>('sidebarOpen', true);
+export const orderDestination = scalar<string>('orderDestination', 'Desk 4-118');
 
 export const CURRENT_USER = {
   name: 'Sara Ahmed',
@@ -127,8 +147,25 @@ export function seedDemoData(): void {
     {
       col: orders as never,
       rows: [
-        { item: 'Flat white', options: 'Oat milk · extra shot', destination: 'Studio 3', price: 14, status: 'on-the-way' },
-        { item: 'Green tea', options: 'No sugar', destination: 'Desk 4-118', price: 9, status: 'delivered' },
+        {
+          item: 'Flat White',
+          options: 'Large · Oat · Extra shot',
+          destination: 'Studio 3 · Level 2',
+          price: 23,
+          status: 'on-the-way',
+          lines: [{ menuItemId: 'flat-white', name: 'Flat White', options: 'Large · Oat · Extra shot', unitPrice: 23, quantity: 1 }],
+        },
+        {
+          item: 'Jasmine Green Tea',
+          options: 'Regular',
+          destination: 'Desk 4-118',
+          price: 21,
+          status: 'delivered',
+          lines: [
+            { menuItemId: 'green-tea', name: 'Jasmine Green Tea', options: 'Regular', unitPrice: 9, quantity: 1 },
+            { menuItemId: 'blueberry-muffin', name: 'Blueberry Muffin', options: 'Warmed', unitPrice: 12, quantity: 1 },
+          ],
+        },
       ].map(row),
     },
     {

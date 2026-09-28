@@ -10,6 +10,10 @@ import { useScalar } from './lib/store';
 import { VmsProvider } from './components/dixels2/VmsContext';
 import { EnterpriseProvider } from './components/dixels2/EnterpriseContext';
 
+const Nourish = lazy(() =>
+  import('./components/views/nourish/Nourish').then((m) => ({ default: m.Nourish })),
+);
+
 const load = {
   calendar: lazy(() => import('./components/dixels2/CoreCalendar').then((m) => ({ default: m.CoreCalendar }))),
   taskflow: lazy(() => import('./components/dixels2/WorkloadManagement').then((m) => ({ default: m.WorkloadManagement }))),
@@ -23,7 +27,6 @@ const load = {
   security: lazy(() => import('./components/dixels2/VmsSecurity').then((m) => ({ default: m.VmsSecurity }))),
   gather: lazy(() => import('./components/dixels2/EventsView').then((m) => ({ default: m.EventsView }))),
   tribes: lazy(() => import('./components/dixels2/CommunitiesView').then((m) => ({ default: m.CommunitiesView }))),
-  nourish: lazy(() => import('./components/dixels2/CoreDrinks').then((m) => ({ default: m.CoreDrinks }))),
   omniserve: lazy(() => import('./components/dixels2/ServiceHubView').then((m) => ({ default: m.ServiceHubView }))),
   resolve: lazy(() => import('./components/dixels2/SupportCenterView').then((m) => ({ default: m.SupportCenterView }))),
   livecanvas: lazy(() => import('./components/dixels2/SignageManager').then((m) => ({ default: m.SignageManager }))),
@@ -72,7 +75,7 @@ function App() {
                 <Route path="/security" element={<LegacyModule id="security" Component={load.security} />} />
                 <Route path="/gather" element={<LegacyModule id="gather" Component={load.gather} />} />
                 <Route path="/tribes" element={<LegacyModule id="tribes" Component={load.tribes} />} />
-                <Route path="/nourish" element={<LegacyModule id="nourish" Component={load.nourish} withPersona />} />
+                <Route path="/nourish" element={<Nourish />} />
                 <Route path="/omniserve" element={<LegacyModule id="omniserve" Component={load.omniserve} />} />
                 <Route path="/resolve" element={<LegacyModule id="resolve" Component={load.resolve} />} />
                 <Route path="/livecanvas" element={<LegacyModule id="livecanvas" Component={load.livecanvas} />} />
