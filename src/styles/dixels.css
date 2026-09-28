@@ -1,0 +1,500 @@
+/* Dixels design system — derived from dixels.ai (measured, not guessed).
+   One hue (308–311°) carries the whole neutral ramp; green 173.5° is the sole
+   complementary accent. Anchors marked EXACT reproduce the live site verbatim. */
+
+:root {
+  /* Brand — purple */
+  --dx-brand-50: #fbf6fe;
+  --dx-brand-100: #eee5f4;
+  --dx-brand-200: #d4c2e1;
+  --dx-brand-300: #baa0cd;
+  --dx-brand-400: #a17fb9;
+  --dx-brand-500: #895ea5;
+  --dx-brand-600: #713c91; /* EXACT — site --purple */
+  --dx-brand-700: #522b6a; /* site --purple-dark */
+  --dx-brand-800: #3b1e4c;
+  --dx-brand-900: #241130;
+  --dx-brand-950: #1a0b23;
+
+  /* Neutral — desaturated brand hue, never grey */
+  --dx-neutral-0: #ffffff;
+  --dx-neutral-50: #fbfafc;
+  --dx-neutral-100: #f7f4fa; /* EXACT — site --soft */
+  --dx-neutral-200: #ebe8ee; /* EXACT — site --line */
+  --dx-neutral-300: #c2bec6;
+  --dx-neutral-400: #9a959f;
+  --dx-neutral-500: #746e7a; /* EXACT — site --muted */
+  --dx-neutral-600: #605966;
+  --dx-neutral-700: #4c4552;
+  --dx-neutral-800: #39323f;
+  --dx-neutral-900: #27202d; /* EXACT — site --ink */
+  --dx-neutral-950: #140f19;
+
+  /* Green — the one complementary accent */
+  --dx-green-50: #f1fbf8;
+  --dx-green-100: #deece7;
+  --dx-green-200: #b7cdc6;
+  --dx-green-300: #91b0a6;
+  --dx-green-400: #6c9387;
+  --dx-green-500: #477769; /* EXACT — site --green */
+  --dx-green-600: #365f53;
+  --dx-green-700: #26473e;
+  --dx-green-800: #17312a;
+  --dx-green-900: #091c17;
+
+  /* Status — pulled to the brand hue family so they read as one system */
+  --dx-success: #477769;
+  --dx-success-bg: #f1fbf8;
+  --dx-warning: #8a6220;
+  --dx-warning-bg: #fdf7ec;
+  --dx-danger: #9b2f45;
+  --dx-danger-bg: #fdf2f4;
+  --dx-info: #713c91;
+  --dx-info-bg: #fbf6fe;
+
+  /* Semantic surfaces */
+  --dx-bg: var(--dx-neutral-0);
+  --dx-bg-subtle: var(--dx-neutral-100);
+  --dx-bg-sunken: var(--dx-neutral-50);
+  --dx-ink: var(--dx-neutral-900);
+  --dx-ink-muted: var(--dx-neutral-500);
+  --dx-ink-subtle: var(--dx-neutral-400);
+  --dx-line: var(--dx-neutral-200);
+  --dx-line-strong: var(--dx-neutral-300);
+
+  /* Type — the max of each clamp is the measured 1440px value */
+  --dx-text-display: clamp(2.5rem, 5.2vw, 4.635rem); /* 74.16px */
+  --dx-text-h1: clamp(2.125rem, 4vw, 3.5625rem); /* 57px */
+  --dx-text-h2: clamp(1.75rem, 2.8vw, 2.5rem); /* 40px */
+  --dx-text-h3: clamp(1.25rem, 1.7vw, 1.5rem); /* 24px */
+  --dx-text-h4: clamp(1.1875rem, 1.45vw, 1.3125rem); /* 21px */
+  --dx-text-h5: 1.0625rem; /* 17px */
+  --dx-text-body-lg: 1rem;
+  --dx-text-body: 0.875rem;
+  --dx-text-body-sm: 0.8125rem;
+  --dx-text-eyebrow: 0.6875rem;
+
+  /* Optical tracking tightens as size grows — the site's signature */
+  --dx-track-display: -0.047em;
+  --dx-track-h1: -0.042em;
+  --dx-track-h2: -0.035em;
+  --dx-track-h3: -0.033em;
+  --dx-track-h4: -0.029em;
+  --dx-track-eyebrow: 0.16em;
+
+  --dx-leading-display: 1.08;
+  --dx-leading-heading: 1.3;
+  --dx-leading-body: 1.65;
+
+  /* Headings never exceed 500. The brand whispers. */
+  --dx-weight-heading: 500;
+  --dx-weight-ui: 500;
+  --dx-weight-body: 400;
+
+  /* Radii */
+  --dx-radius-xs: 6px;
+  --dx-radius-sm: 8px;
+  --dx-radius-md: 9px;
+  --dx-radius-lg: 13px;
+  --dx-radius-xl: 18px;
+  --dx-radius-2xl: 30px;
+  --dx-radius-full: 999px;
+
+  /* The site draws hairlines at 0.8px, not 1px */
+  --dx-hairline: 0.8px;
+
+  /* Elevation — purple-tinted, never neutral black */
+  --dx-shadow-card: 0 2px 5px 0 rgba(56, 43, 69, 0.047), inset 0 0 0 1px #ffffff;
+  --dx-shadow-ambient: 0 3px 16px 0 rgba(72, 50, 87, 0.02);
+  --dx-shadow-raise: 0 8px 18px -8px rgba(123, 88, 151, 0.318);
+  --dx-shadow-pop: 0 20px 48px 0 rgba(40, 19, 51, 0.094), 0 3px 8px 0 rgba(40, 19, 51, 0.03);
+
+  /* Motion — everything fast; one easing curve */
+  --dx-ease: cubic-bezier(0.22, 0.8, 0.25, 1);
+  --dx-duration-fast: 150ms;
+  --dx-duration-base: 180ms;
+  --dx-duration-slow: 240ms;
+
+  /* Signature atmospheres */
+  --dx-wash-soft: radial-gradient(at 90% 30%, rgba(228, 208, 244, 0.42), transparent 75%),
+    linear-gradient(135deg, #faf6fd, #f0e7f7);
+  --dx-wash-deep: radial-gradient(at 95% 70%, #a079b4, transparent 65%),
+    linear-gradient(130deg, #3e2a50, #79558d);
+  --dx-grid: linear-gradient(rgba(137, 118, 156, 0.047) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(137, 118, 156, 0.047) 1px, transparent 1px);
+}
+
+/* Re-point the shadcn/Radix contract at Dixels values so all 47 kit
+   components become on-brand without touching a single one. */
+:root {
+  --background: var(--dx-neutral-0);
+  --foreground: var(--dx-neutral-900);
+  --card: var(--dx-neutral-0);
+  --card-foreground: var(--dx-neutral-900);
+  --popover: var(--dx-neutral-0);
+  --popover-foreground: var(--dx-neutral-900);
+  --primary: var(--dx-brand-600);
+  --primary-foreground: var(--dx-neutral-0);
+  --secondary: var(--dx-neutral-100);
+  --secondary-foreground: var(--dx-neutral-900);
+  --muted: var(--dx-neutral-100);
+  --muted-foreground: var(--dx-neutral-500);
+  --accent: var(--dx-brand-50);
+  --accent-foreground: var(--dx-brand-700);
+  --destructive: var(--dx-danger);
+  --destructive-foreground: var(--dx-neutral-0);
+  --border: var(--dx-neutral-200);
+  --input: var(--dx-neutral-200);
+  --input-background: var(--dx-neutral-0);
+  --switch-background: var(--dx-neutral-300);
+  --ring: var(--dx-brand-600);
+  --radius: var(--dx-radius-md);
+
+  --chart-1: var(--dx-brand-600);
+  --chart-2: var(--dx-green-500);
+  --chart-3: var(--dx-brand-400);
+  --chart-4: var(--dx-neutral-400);
+  --chart-5: var(--dx-brand-800);
+
+  --sidebar: var(--dx-neutral-0);
+  --sidebar-foreground: var(--dx-neutral-900);
+  --sidebar-primary: var(--dx-brand-600);
+  --sidebar-primary-foreground: var(--dx-neutral-0);
+  --sidebar-accent: var(--dx-brand-50);
+  --sidebar-accent-foreground: var(--dx-brand-700);
+  --sidebar-border: var(--dx-neutral-200);
+  --sidebar-ring: var(--dx-brand-600);
+
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+}
+
+@theme inline {
+  --font-sans: 'Inter Variable', Inter, system-ui, sans-serif;
+
+  --color-brand-50: var(--dx-brand-50);
+  --color-brand-100: var(--dx-brand-100);
+  --color-brand-200: var(--dx-brand-200);
+  --color-brand-300: var(--dx-brand-300);
+  --color-brand-400: var(--dx-brand-400);
+  --color-brand-500: var(--dx-brand-500);
+  --color-brand-600: var(--dx-brand-600);
+  --color-brand-700: var(--dx-brand-700);
+  --color-brand-800: var(--dx-brand-800);
+  --color-brand-900: var(--dx-brand-900);
+  --color-brand-950: var(--dx-brand-950);
+
+  --color-ink: var(--dx-neutral-900);
+  --color-ink-muted: var(--dx-neutral-500);
+  --color-ink-subtle: var(--dx-neutral-400);
+  --color-line: var(--dx-neutral-200);
+  --color-soft: var(--dx-neutral-100);
+
+  --color-nt-0: var(--dx-neutral-0);
+  --color-nt-50: var(--dx-neutral-50);
+  --color-nt-100: var(--dx-neutral-100);
+  --color-nt-200: var(--dx-neutral-200);
+  --color-nt-300: var(--dx-neutral-300);
+  --color-nt-400: var(--dx-neutral-400);
+  --color-nt-500: var(--dx-neutral-500);
+  --color-nt-600: var(--dx-neutral-600);
+  --color-nt-700: var(--dx-neutral-700);
+  --color-nt-800: var(--dx-neutral-800);
+  --color-nt-900: var(--dx-neutral-900);
+  --color-nt-950: var(--dx-neutral-950);
+
+  --color-grn-50: var(--dx-green-50);
+  --color-grn-100: var(--dx-green-100);
+  --color-grn-200: var(--dx-green-200);
+  --color-grn-400: var(--dx-green-400);
+  --color-grn-500: var(--dx-green-500);
+  --color-grn-600: var(--dx-green-600);
+  --color-grn-700: var(--dx-green-700);
+
+  --color-success: var(--dx-success);
+  --color-success-bg: var(--dx-success-bg);
+  --color-warning: var(--dx-warning);
+  --color-warning-bg: var(--dx-warning-bg);
+  --color-danger: var(--dx-danger);
+  --color-danger-bg: var(--dx-danger-bg);
+
+  --text-display: var(--dx-text-display);
+  --text-h1: var(--dx-text-h1);
+  --text-h2: var(--dx-text-h2);
+  --text-h3: var(--dx-text-h3);
+  --text-h4: var(--dx-text-h4);
+  --text-h5: var(--dx-text-h5);
+  --text-eyebrow: var(--dx-text-eyebrow);
+
+  --radius-xs: var(--dx-radius-xs);
+  --radius-sm: var(--dx-radius-sm);
+  --radius-md: var(--dx-radius-md);
+  --radius-lg: var(--dx-radius-lg);
+  --radius-xl: var(--dx-radius-xl);
+  --radius-2xl: var(--dx-radius-2xl);
+
+  --shadow-card: var(--dx-shadow-card);
+  --shadow-ambient: var(--dx-shadow-ambient);
+  --shadow-raise: var(--dx-shadow-raise);
+  --shadow-pop: var(--dx-shadow-pop);
+
+  --ease-dx: var(--dx-ease);
+}
+
+@utility dx-eyebrow {
+  font-size: var(--dx-text-eyebrow);
+  font-weight: var(--dx-weight-ui);
+  letter-spacing: var(--dx-track-eyebrow);
+  text-transform: uppercase;
+  color: var(--dx-brand-500);
+}
+
+@utility dx-display {
+  font-size: var(--dx-text-display);
+  font-weight: var(--dx-weight-heading);
+  letter-spacing: var(--dx-track-display);
+  line-height: var(--dx-leading-display);
+  color: var(--dx-ink);
+}
+
+@utility dx-h1 {
+  font-size: var(--dx-text-h1);
+  font-weight: var(--dx-weight-heading);
+  letter-spacing: var(--dx-track-h1);
+  line-height: 1.08;
+  color: var(--dx-ink);
+}
+
+@utility dx-h2 {
+  font-size: var(--dx-text-h2);
+  font-weight: var(--dx-weight-heading);
+  letter-spacing: var(--dx-track-h2);
+  line-height: 1.17;
+  color: var(--dx-ink);
+}
+
+@utility dx-h3 {
+  font-size: var(--dx-text-h3);
+  font-weight: var(--dx-weight-heading);
+  letter-spacing: var(--dx-track-h3);
+  line-height: var(--dx-leading-heading);
+  color: var(--dx-ink);
+}
+
+@utility dx-h4 {
+  font-size: var(--dx-text-h4);
+  font-weight: var(--dx-weight-heading);
+  letter-spacing: var(--dx-track-h4);
+  line-height: 1.35;
+  color: var(--dx-ink);
+}
+
+@utility dx-card {
+  background: var(--dx-neutral-0);
+  border: var(--dx-hairline) solid var(--dx-line);
+  border-radius: var(--dx-radius-lg);
+  box-shadow: var(--dx-shadow-card);
+}
+
+@utility dx-focus {
+  outline: 2px solid var(--dx-brand-600);
+  outline-offset: 2px;
+}
+
+@utility dx-field {
+  width: 100%;
+  border: var(--dx-hairline) solid var(--dx-line);
+  border-radius: var(--dx-radius-md);
+  background: var(--dx-neutral-0);
+  padding: 0.625rem 0.75rem;
+  font-size: var(--dx-text-body);
+  color: var(--dx-ink);
+  transition: background var(--dx-duration-base) var(--dx-ease),
+    border-color var(--dx-duration-base) var(--dx-ease),
+    box-shadow var(--dx-duration-base) var(--dx-ease);
+
+  &::placeholder {
+    color: var(--dx-ink-subtle);
+  }
+
+  /* A wash and a glow, never a hard ring — the field itself reacts. */
+  &:focus {
+    outline: none;
+    border-color: var(--dx-brand-400);
+    background: var(--dx-brand-50);
+    box-shadow: 0 0 0 3px rgba(113, 60, 145, 0.12);
+  }
+
+  &:disabled {
+    background: var(--dx-neutral-100);
+    color: var(--dx-ink-subtle);
+  }
+}
+
+@utility dx-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--dx-radius-md);
+  background: var(--dx-neutral-900);
+  color: var(--dx-neutral-0);
+  padding: 0.625rem 1rem;
+  font-size: var(--dx-text-body);
+  font-weight: var(--dx-weight-ui);
+  transition: background var(--dx-duration-base) var(--dx-ease),
+    transform var(--dx-duration-base) var(--dx-ease),
+    box-shadow var(--dx-duration-base) var(--dx-ease);
+
+  &:hover:not(:disabled) {
+    background: var(--dx-brand-700);
+    box-shadow: var(--dx-shadow-raise);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+@utility dx-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: var(--dx-hairline) solid var(--dx-line);
+  border-radius: var(--dx-radius-md);
+  background: var(--dx-neutral-0);
+  color: var(--dx-ink);
+  padding: 0.625rem 1rem;
+  font-size: var(--dx-text-body);
+  font-weight: var(--dx-weight-ui);
+  box-shadow: var(--dx-shadow-card);
+  transition: background var(--dx-duration-base) var(--dx-ease),
+    border-color var(--dx-duration-base) var(--dx-ease);
+
+  &:hover {
+    background: var(--dx-neutral-50);
+    border-color: var(--dx-line-strong);
+  }
+}
+
+@utility dx-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--dx-radius-sm);
+  color: var(--dx-ink-muted);
+  padding: 0.5rem 0.6875rem;
+  font-size: var(--dx-text-body);
+  font-weight: var(--dx-weight-ui);
+  transition: background var(--dx-duration-base) var(--dx-ease),
+    color var(--dx-duration-base) var(--dx-ease);
+
+  &:hover {
+    background: var(--dx-neutral-100);
+    color: var(--dx-ink);
+  }
+}
+
+@utility dx-grid-texture {
+  background-image: var(--dx-grid);
+  background-size: 28px 28px;
+}
+
+/* These must be real utilities: `bg-[var(--x)]` resolves to background-color,
+   which silently drops a multi-layer gradient. */
+@utility dx-wash-soft {
+  background-image: var(--dx-wash-soft);
+}
+
+@utility dx-wash-deep {
+  background-image: var(--dx-wash-deep);
+  background-color: var(--dx-brand-800);
+}
+
+/* Slow drifting brand atmosphere. Three offset radials, no JS. */
+@utility dx-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(140deg, #ffffff 0%, #faf7fd 45%, #f3ecf8 100%);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    will-change: transform;
+  }
+
+  &::before {
+    width: 46vw;
+    height: 46vw;
+    top: -12%;
+    right: -8%;
+    background: radial-gradient(circle, rgba(184, 138, 214, 0.42), transparent 70%);
+    animation: dx-drift-a 26s var(--dx-ease) infinite alternate;
+  }
+
+  &::after {
+    width: 38vw;
+    height: 38vw;
+    bottom: -14%;
+    left: -6%;
+    background: radial-gradient(circle, rgba(126, 168, 198, 0.3), transparent 70%);
+    animation: dx-drift-b 32s var(--dx-ease) infinite alternate;
+  }
+}
+
+@keyframes dx-drift-a {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-7%, 9%, 0) scale(1.12);
+  }
+}
+
+@keyframes dx-drift-b {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(9%, -7%, 0) scale(1.15);
+  }
+}
+
+@layer base {
+  html {
+    font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--dx-brand-600);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--dx-brand-200);
+    color: var(--dx-brand-900);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
