@@ -26,6 +26,10 @@ const SpaceOS = lazy(() =>
   import('./components/views/spaceos/SpaceOS').then((m) => ({ default: m.SpaceOS })),
 );
 
+const Tribes = lazy(() =>
+  import('./components/views/tribes/Tribes').then((m) => ({ default: m.Tribes })),
+);
+
 const load = {
   calendar: lazy(() => import('./components/dixels2/CoreCalendar').then((m) => ({ default: m.CoreCalendar }))),
   taskflow: lazy(() => import('./components/dixels2/WorkloadManagement').then((m) => ({ default: m.WorkloadManagement }))),
@@ -35,7 +39,6 @@ const load = {
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
   vmsadmin: lazy(() => import('./components/dixels2/VmsAdmin').then((m) => ({ default: m.VmsAdmin }))),
   security: lazy(() => import('./components/dixels2/VmsSecurity').then((m) => ({ default: m.VmsSecurity }))),
-  tribes: lazy(() => import('./components/dixels2/CommunitiesView').then((m) => ({ default: m.CommunitiesView }))),
   omniserve: lazy(() => import('./components/dixels2/ServiceHubView').then((m) => ({ default: m.ServiceHubView }))),
   resolve: lazy(() => import('./components/dixels2/SupportCenterView').then((m) => ({ default: m.SupportCenterView }))),
   livecanvas: lazy(() => import('./components/dixels2/SignageManager').then((m) => ({ default: m.SignageManager }))),
@@ -83,7 +86,7 @@ function App() {
                 <Route path="/visitflow/admin" element={<LegacyModule id="vmsadmin" Component={load.vmsadmin} />} />
                 <Route path="/security" element={<LegacyModule id="security" Component={load.security} />} />
                 <Route path="/gather" element={<Gather />} />
-                <Route path="/tribes" element={<LegacyModule id="tribes" Component={load.tribes} />} />
+                <Route path="/tribes" element={<Tribes />} />
                 <Route path="/nourish" element={<Nourish />} />
                 <Route path="/omniserve" element={<LegacyModule id="omniserve" Component={load.omniserve} />} />
                 <Route path="/resolve" element={<LegacyModule id="resolve" Component={load.resolve} />} />

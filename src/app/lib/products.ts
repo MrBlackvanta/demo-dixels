@@ -97,12 +97,12 @@ export const NAV_BY_PERSONA: Record<Persona, NavGroup[]> = {
   Admin: [
     { title: 'Overview', items: [P.dashboard, P.analytics, P.settings] },
     { title: 'Operations', items: [P.buildingops, P.twinspace, P.security, P.vmsadmin] },
-    { title: 'Content & experience', items: [P.content, P.vault, P.livecanvas] },
+    { title: 'Content & experience', items: [P.content, P.vault, P.livecanvas, P.tribes] },
     { title: 'Platform', items: [P.identity, P.flow, P.nexus] },
   ],
   FacilityManager: [
     { title: 'Operations', items: [P.dashboard, P.buildingops, P.spaceos, P.twinspace] },
-    { title: 'Experience', items: [P.livecanvas, P.gather] },
+    { title: 'Experience', items: [P.livecanvas, P.gather, P.tribes] },
     { title: 'Services', items: [P.nourish, P.omniserve, P.resolve] },
     { title: 'Security', items: [P.security, P.visitflow] },
   ],

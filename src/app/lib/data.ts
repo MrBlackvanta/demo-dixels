@@ -7,9 +7,11 @@ import {
   MEETINGS,
   NOTIFICATIONS,
   ORDERS,
+  POSTS,
   SPACES,
   TASKS,
   TICKETS,
+  TRIBES,
   VISITS,
 } from './seed';
 import type { Entity } from './store';
@@ -111,6 +113,44 @@ export interface GatherEvent extends Entity {
   required: boolean;
   status: EventStatus;
   spaceId?: string;
+  tribeId?: string;
+}
+
+export type TribeCategory = 'Professional' | 'Wellness' | 'Social' | 'Creative' | 'Giving';
+
+export type TribeAccess = 'open' | 'request';
+
+export interface Tribe extends Entity {
+  name: string;
+  category: TribeCategory;
+  tagline: string;
+  about: string;
+  lead: string;
+  members: string[];
+  pending: string[];
+  access: TribeAccess;
+  archived: boolean;
+  tags: string[];
+  home: string;
+}
+
+export type PostKind = 'update' | 'question' | 'win';
+
+export interface Reply {
+  author: string;
+  body: string;
+  at: string;
+}
+
+export interface Post extends Entity {
+  tribeId: string;
+  author: string;
+  body: string;
+  at: string;
+  kind: PostKind;
+  likes: string[];
+  replies: Reply[];
+  pinned: boolean;
 }
 
 export interface Badge extends Entity {
@@ -178,6 +218,8 @@ export const spaces = collection<Space>('spaces');
 export const bookings = collection<Booking>('bookings');
 export const visits = collection<Visit>('visits');
 export const events = collection<GatherEvent>('events');
+export const tribes = collection<Tribe>('tribes');
+export const posts = collection<Post>('posts');
 export const badges = collection<Badge>('badges');
 export const deliveries = collection<Delivery>('deliveries');
 export const orders = collection<Order>('orders');
@@ -233,6 +275,14 @@ export function seedDemoData(): void {
     {
       col: events as never,
       rows: EVENTS.map(keyed),
+    },
+    {
+      col: tribes as never,
+      rows: TRIBES.map(keyed),
+    },
+    {
+      col: posts as never,
+      rows: POSTS.map(keyed),
     },
     {
       col: badges as never,
