@@ -46,8 +46,11 @@ const MyCalendar = lazy(() =>
   import('./components/views/calendar/MyCalendar').then((m) => ({ default: m.MyCalendar })),
 );
 
+const Atmosphere = lazy(() =>
+  import('./components/views/atmosphere/Atmosphere').then((m) => ({ default: m.Atmosphere })),
+);
+
 const load = {
-  atmosphere: lazy(() => import('./components/dixels2/SmartControlView').then((m) => ({ default: m.SmartControlView }))),
   pathfinder: lazy(() => import('./components/dixels2/CampusGuideView').then((m) => ({ default: m.CampusGuideView }))),
   twinspace: lazy(() => import('./components/dixels2/SpaceManagement').then((m) => ({ default: m.SpaceManagement }))),
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
@@ -89,7 +92,7 @@ function App() {
                 <Route path="/today" element={<Today />} />
                 <Route path="/calendar" element={<MyCalendar />} />
                 <Route path="/taskflow" element={<TaskFlow />} />
-                <Route path="/atmosphere" element={<LegacyModule id="atmosphere" Component={load.atmosphere} />} />
+                <Route path="/atmosphere" element={<Atmosphere />} />
                 <Route path="/spaceos" element={<SpaceOS />} />
                 <Route path="/pathfinder" element={<LegacyModule id="pathfinder" Component={load.pathfinder} />} />
                 <Route path="/twinspace" element={<LegacyModule id="twinspace" Component={load.twinspace} padded />} />

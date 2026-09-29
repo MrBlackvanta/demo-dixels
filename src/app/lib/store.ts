@@ -132,7 +132,7 @@ export function useScalar<T>(box: Scalar<T>): [T, (value: T) => void] {
   return [value, box.write];
 }
 
-const SEED_VERSION = 'v8';
+const SEED_VERSION = 'v12';
 const SEED_STAMP = `${NAMESPACE}.seeded.${SEED_VERSION}`;
 
 export function seedOnce(collections: Array<{ col: Collection<never>; rows: unknown[] }>): void {

@@ -6,8 +6,11 @@ import type {
   Badge,
   Booking,
   BookingStatus,
+  ComfortVerdict,
+  ComfortVote,
   Delivery,
   GatherEvent,
+  HvacMode,
   Invitee,
   Meeting,
   MeetingKind,
@@ -17,6 +20,10 @@ import type {
   Post,
   Project,
   Rsvp,
+  Rule,
+  RuleTrigger,
+  Scene,
+  SignState,
   Space,
   ServiceRequest,
   Task,
@@ -24,6 +31,7 @@ import type {
   Ticket,
   Tribe,
   Visit,
+  Zone,
 } from './data';
 
 type New<T> = Omit<T, keyof Entity>;
@@ -1258,6 +1266,19 @@ const TICKET_SEED: TicketSeed[] = [
       { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 69, kind: 'event' },
       { author: 'Yousef Mansour', body: 'Cleaned with solvent and resurfaced. Permanent markers are out of the supply cupboard now.', ago: 52.4 },
       { author: 'Resolve', body: 'Yousef Mansour resolved the ticket', ago: 52, kind: 'event' },
+    ],
+  },
+  {
+    id: 'tk-orchid-cold',
+    subject: 'Orchid runs cold whatever the panel says',
+    detail: 'It sits near 19° all day. Six people have flagged it from the room this week.',
+    category: 'Heating and cooling', team: 'Workplace', spaceId: 'orchid',
+    priority: 'high', status: 'in-progress',
+    requester: 'Sara Ahmed', assignee: 'Yousef Mansour', age: 26,
+    talk: [
+      { author: 'Resolve', body: 'Yousef Mansour took the ticket', ago: 25.2, kind: 'event' },
+      { author: 'Yousef Mansour', body: 'Greenline found the supply damper stuck open on this morning’s inspection. The part is ordered and they are back Thursday.', ago: 8.5 },
+      { author: 'Sara Ahmed', body: 'People have started dropping the Level 5 rooms from their invites, so it is worth chasing.', ago: 6 },
     ],
   },
 ];
@@ -3877,3 +3898,167 @@ export const MEETINGS: Array<New<Meeting> & { id: string }> = [
   ...visitMeetings,
   ...focusMeetings,
 ];
+
+interface ZoneSeed {
+  spaceId: string;
+  temp: number;
+  target: number;
+  humidity: number;
+  co2: number;
+  noise: number;
+  lux: number;
+  mode: HvacMode;
+  fan: number;
+  lights: number;
+  warmth: number;
+  blinds: number;
+  occupancy: number;
+  sign: SignState;
+  setBy?: string;
+  setAgo?: number;
+  signNote?: string;
+  fault?: string;
+}
+
+const ZONE_SEED: ZoneSeed[] = [
+  { spaceId: 'atrium', temp: 23.4, target: 22.5, humidity: 44, co2: 720, noise: 52, lux: 640, mode: 'auto', fan: 2, lights: 70, warmth: 4000, blinds: 80, occupancy: 11, sign: 'available' },
+  { spaceId: 'forum', temp: 25.1, target: 20, humidity: 41, co2: 610, noise: 38, lux: 300, mode: 'cool', fan: 3, lights: 55, warmth: 4500, blinds: 40, occupancy: 0, sign: 'available', setBy: 'Yousef Mansour', setAgo: 1.5 },
+  { spaceId: 'studio-3', temp: 24.1, target: 22.5, humidity: 46, co2: 940, noise: 44, lux: 520, mode: 'cool', fan: 2, lights: 85, warmth: 4500, blinds: 60, occupancy: 3, sign: 'busy' },
+  { spaceId: 'studio-4', temp: 22.6, target: 22.5, humidity: 45, co2: 680, noise: 36, lux: 480, mode: 'auto', fan: 1, lights: 80, warmth: 4200, blinds: 70, occupancy: 0, sign: 'available' },
+  { spaceId: 'pod-2a', temp: 21.9, target: 22, humidity: 43, co2: 560, noise: 30, lux: 420, mode: 'auto', fan: 1, lights: 60, warmth: 3200, blinds: 0, occupancy: 1, sign: 'focus' },
+  { spaceId: 'pod-2b', temp: 23.8, target: 22, humidity: 48, co2: 1180, noise: 33, lux: 400, mode: 'fan', fan: 2, lights: 70, warmth: 3000, blinds: 0, occupancy: 1, sign: 'focus', setBy: 'Omar Zaki', setAgo: 0.6 },
+  { spaceId: 'cedar', temp: 22.9, target: 22.5, humidity: 44, co2: 700, noise: 40, lux: 500, mode: 'auto', fan: 1, lights: 80, warmth: 4500, blinds: 65, occupancy: 2, sign: 'available' },
+  { spaceId: 'jasmine', temp: 23.6, target: 23, humidity: 47, co2: 820, noise: 42, lux: 460, mode: 'cool', fan: 2, lights: 75, warmth: 4000, blinds: 55, occupancy: 2, sign: 'busy' },
+  { spaceId: 'olive', temp: 21.4, target: 22.5, humidity: 42, co2: 520, noise: 31, lux: 440, mode: 'heat', fan: 1, lights: 70, warmth: 3600, blinds: 50, occupancy: 0, sign: 'available' },
+  { spaceId: 'lab', temp: 23.1, target: 22.5, humidity: 45, co2: 880, noise: 47, lux: 600, mode: 'auto', fan: 2, lights: 90, warmth: 5000, blinds: 75, occupancy: 8, sign: 'busy' },
+  { spaceId: 'maple', temp: 22.4, target: 22.5, humidity: 44, co2: 640, noise: 38, lux: 510, mode: 'auto', fan: 1, lights: 80, warmth: 4500, blinds: 60, occupancy: 0, sign: 'available' },
+  { spaceId: 'desk-4-118', temp: 22.8, target: 22.5, humidity: 43, co2: 620, noise: 41, lux: 480, mode: 'auto', fan: 1, lights: 75, warmth: 3800, blinds: 70, occupancy: 1, sign: 'focus', signNote: 'Heads down until the design review', setBy: 'Sara Ahmed', setAgo: 2.2 },
+  { spaceId: 'desk-4-120', temp: 22.5, target: 22.5, humidity: 44, co2: 480, noise: 28, lux: 300, mode: 'off', fan: 0, lights: 0, warmth: 3000, blinds: 40, occupancy: 0, sign: 'away' },
+  { spaceId: 'desk-4-122', temp: 24.3, target: 22.5, humidity: 49, co2: 700, noise: 43, lux: 500, mode: 'cool', fan: 2, lights: 80, warmth: 4000, blinds: 85, occupancy: 1, sign: 'available' },
+  { spaceId: 'orchid', temp: 18.9, target: 21, humidity: 38, co2: 590, noise: 35, lux: 470, mode: 'cool', fan: 3, lights: 85, warmth: 4800, blinds: 45, occupancy: 5, sign: 'busy', setBy: 'Yousef Mansour', setAgo: 20, fault: 'Supply damper stuck open. Greenline have the part on order.' },
+  { spaceId: 'lotus', temp: 22.7, target: 22.5, humidity: 45, co2: 730, noise: 39, lux: 530, mode: 'auto', fan: 1, lights: 80, warmth: 4500, blinds: 70, occupancy: 4, sign: 'busy' },
+  { spaceId: 'boardroom', temp: 21.8, target: 22, humidity: 43, co2: 560, noise: 33, lux: 520, mode: 'auto', fan: 1, lights: 85, warmth: 4200, blinds: 60, occupancy: 0, sign: 'available' },
+  { spaceId: 'skyline', temp: 24.6, target: 24, humidity: 51, co2: 690, noise: 45, lux: 700, mode: 'cool', fan: 2, lights: 65, warmth: 3600, blinds: 90, occupancy: 6, sign: 'available', setBy: 'Amira Shafik', setAgo: 3.4 },
+  { spaceId: 'roof-garden', temp: 27.9, target: 26, humidity: 33, co2: 420, noise: 49, lux: 1400, mode: 'fan', fan: 3, lights: 40, warmth: 2700, blinds: 100, occupancy: 2, sign: 'available' },
+];
+
+const wobbleAt = (spaceId: string, index: number): number => {
+  const base = [...spaceId].reduce((sum, letter) => sum + letter.charCodeAt(0), 0);
+  const phase = base / 7 + index * 0.62;
+  return Math.sin(phase) * 0.22 + Math.sin(phase * 0.37) * 0.11;
+};
+
+const trendFor = (entry: ZoneSeed): number[] => {
+  const from = entry.temp + (entry.target - entry.temp) * 0.6;
+  return Array.from({ length: 12 }, (_, index) => {
+    const glide = from + (entry.temp - from) * ((index + 1) / 12);
+    return Number((glide + wobbleAt(entry.spaceId, index)).toFixed(2));
+  });
+};
+
+export const ZONES: Array<New<Zone> & { id: string }> = ZONE_SEED.map(({ setAgo, ...entry }) => ({
+  ...entry,
+  id: `zn-${entry.spaceId}`,
+  trend: trendFor(entry),
+  setAt: setAgo === undefined ? undefined : hoursAgo(setAgo),
+}));
+
+interface VoteSeed {
+  spaceId: string;
+  person: string;
+  verdict: ComfortVerdict;
+  ago: number;
+  note?: string;
+}
+
+const VOTE_SEED: VoteSeed[] = [
+  { spaceId: 'orchid', person: 'Sara Ahmed', verdict: 'cold', ago: 7.2, note: 'Had to fetch a jacket for a forty minute review.' },
+  { spaceId: 'orchid', person: 'Hana Youssef', verdict: 'cold', ago: 25.1 },
+  { spaceId: 'orchid', person: 'Khaled Nour', verdict: 'cold', ago: 3.6, note: 'Clients noticed before we did.' },
+  { spaceId: 'orchid', person: 'Noura Sami', verdict: 'cold', ago: 9.2 },
+  { spaceId: 'orchid', person: 'Laila Mostafa', verdict: 'cold', ago: 5.4 },
+  { spaceId: 'orchid', person: 'Fadi Barakat', verdict: 'cool', ago: 2.1 },
+  { spaceId: 'orchid', person: 'Maya Fahmy', verdict: 'right', ago: 1.3 },
+  { spaceId: 'pod-2b', person: 'Omar Zaki', verdict: 'warm', ago: 0.7, note: 'Stuffy after an hour with the door shut.' },
+  { spaceId: 'pod-2b', person: 'Tamer Sobhy', verdict: 'warm', ago: 4.8 },
+  { spaceId: 'desk-4-122', person: 'Yara Sabry', verdict: 'warm', ago: 1.1 },
+  { spaceId: 'desk-4-122', person: 'Sami Kamal', verdict: 'warm', ago: 3.6 },
+  { spaceId: 'studio-3', person: 'Rana Khalil', verdict: 'warm', ago: 2.8 },
+  { spaceId: 'studio-3', person: 'Nadia Salem', verdict: 'warm', ago: 1.9 },
+  { spaceId: 'studio-3', person: 'Karim Fouad', verdict: 'right', ago: 6.3 },
+  { spaceId: 'skyline', person: 'Amira Shafik', verdict: 'warm', ago: 3.2 },
+  { spaceId: 'skyline', person: 'Salma Gaber', verdict: 'warm', ago: 2.4, note: 'The glass side bakes after lunch.' },
+  { spaceId: 'skyline', person: 'Farah Nabil', verdict: 'right', ago: 7.7 },
+  { spaceId: 'forum', person: 'Adel Rashid', verdict: 'cool', ago: 1.6 },
+  { spaceId: 'atrium', person: 'Lina Haddad', verdict: 'right', ago: 4.2 },
+  { spaceId: 'atrium', person: 'Mona Darwish', verdict: 'right', ago: 3.1 },
+  { spaceId: 'atrium', person: 'Hassan Iqbal', verdict: 'warm', ago: 5.9 },
+  { spaceId: 'lab', person: 'Ziad Morsi', verdict: 'right', ago: 2.2 },
+  { spaceId: 'lab', person: 'Yara Sabry', verdict: 'right', ago: 6.8 },
+  { spaceId: 'lab', person: 'Bassem Riad', verdict: 'warm', ago: 1.4 },
+  { spaceId: 'lab', person: 'Tamer Sobhy', verdict: 'right', ago: 7.2 },
+  { spaceId: 'cedar', person: 'Reem Othman', verdict: 'right', ago: 3.8 },
+  { spaceId: 'cedar', person: 'Dina Hafez', verdict: 'right', ago: 5.1 },
+  { spaceId: 'lotus', person: 'Noura Sami', verdict: 'right', ago: 2.6 },
+  { spaceId: 'lotus', person: 'Tarek Aziz', verdict: 'cool', ago: 8.4 },
+  { spaceId: 'maple', person: 'Waleed Tantawy', verdict: 'right', ago: 6.1 },
+  { spaceId: 'jasmine', person: 'Rana Khalil', verdict: 'warm', ago: 4.4 },
+  { spaceId: 'jasmine', person: 'Reem Othman', verdict: 'right', ago: 9.1 },
+  { spaceId: 'olive', person: 'Tarek Aziz', verdict: 'cool', ago: 2.9 },
+  { spaceId: 'olive', person: 'Laila Mostafa', verdict: 'cool', ago: 5.6 },
+  { spaceId: 'studio-4', person: 'Maya Fahmy', verdict: 'right', ago: 3.4 },
+  { spaceId: 'studio-4', person: 'Sara Ahmed', verdict: 'right', ago: 7.9 },
+  { spaceId: 'boardroom', person: 'Noura Sami', verdict: 'right', ago: 10.2 },
+  { spaceId: 'pod-2a', person: 'Nadia Salem', verdict: 'right', ago: 1.8 },
+  { spaceId: 'pod-2a', person: 'Sara Ahmed', verdict: 'right', ago: 11.4 },
+  { spaceId: 'roof-garden', person: 'Mona Darwish', verdict: 'hot', ago: 2.3, note: 'Fine in the shade, brutal in the sun.' },
+  { spaceId: 'roof-garden', person: 'Salma Gaber', verdict: 'hot', ago: 4.9 },
+  { spaceId: 'desk-4-118', person: 'Sara Ahmed', verdict: 'right', ago: 2.7 },
+  { spaceId: 'atrium', person: 'Fadi Barakat', verdict: 'right', ago: 8.8 },
+  { spaceId: 'forum', person: 'Yousef Mansour', verdict: 'right', ago: 12.6 },
+  { spaceId: 'skyline', person: 'Khaled Nour', verdict: 'warm', ago: 1.2 },
+  { spaceId: 'lotus', person: 'Hana Youssef', verdict: 'right', ago: 4.6 },
+  { spaceId: 'cedar', person: 'Karim Fouad', verdict: 'right', ago: 10.8 },
+  { spaceId: 'desk-4-122', person: 'Ziad Morsi', verdict: 'warm', ago: 6.4 },
+];
+
+export const VOTES: New<ComfortVote>[] = VOTE_SEED.map(({ ago, ...vote }) => ({
+  ...vote,
+  at: hoursAgo(ago),
+}));
+
+export const SCENES: Array<New<Scene> & { id: string }> = [
+  { id: 'sc-focus', name: 'Focus', summary: 'Dim and warm, fan low, sign on the door.', glyph: 'focus', target: 22, mode: 'auto', fan: 1, lights: 35, warmth: 3000, blinds: 20, sign: 'focus', signNote: 'Heads down', owner: 'Workplace', shared: true, builtIn: true, uses: 184 },
+  { id: 'sc-meeting', name: 'Meeting', summary: 'Bright, cool and ventilated for a full room.', glyph: 'meeting', target: 21.5, mode: 'cool', fan: 2, lights: 95, warmth: 4800, blinds: 100, sign: 'busy', owner: 'Workplace', shared: true, builtIn: true, uses: 231 },
+  { id: 'sc-present', name: 'Presenting', summary: 'Lights down, blinds shut, screen readable.', glyph: 'present', target: 21.5, mode: 'cool', fan: 2, lights: 15, warmth: 3400, blinds: 0, sign: 'busy', owner: 'Workplace', shared: true, builtIn: true, uses: 96 },
+  { id: 'sc-wind-down', name: 'Wind down', summary: 'Warm light, gentle air, back to available.', glyph: 'wind', target: 23, mode: 'fan', fan: 1, lights: 55, warmth: 2700, blinds: 100, sign: 'available', owner: 'Workplace', shared: true, builtIn: true, uses: 73 },
+  { id: 'sc-soft-start', name: 'Soft start', summary: 'How Sara likes the first hour of the day.', glyph: 'sun', target: 22.5, mode: 'auto', fan: 1, lights: 60, warmth: 3400, blinds: 80, sign: 'available', owner: 'Sara Ahmed', shared: false, builtIn: false, uses: 28 },
+  { id: 'sc-workshop', name: 'Workshop', summary: 'Everything up for a long room full of people.', glyph: 'workshop', target: 21, mode: 'cool', fan: 3, lights: 100, warmth: 5000, blinds: 100, sign: 'busy', owner: 'Sara Ahmed', shared: true, builtIn: false, uses: 12 },
+];
+
+interface RuleSeed {
+  id: string;
+  name: string;
+  trigger: RuleTrigger;
+  sceneId: string;
+  lead: number;
+  owner: string;
+  active: boolean;
+  runs: number;
+  spaceId?: string;
+  kind?: MeetingKind;
+  ranAgo?: number;
+}
+
+const RULE_SEED: RuleSeed[] = [
+  { id: 'rl-sign', name: 'Put the sign up when I am in a meeting', trigger: 'meeting-starts', sceneId: 'sc-meeting', lead: 0, owner: 'Sara Ahmed', active: true, runs: 41, ranAgo: 20 },
+  { id: 'rl-studio3', name: 'Cool Studio 3 before anyone walks in', trigger: 'meeting-starts', sceneId: 'sc-meeting', lead: 20, owner: 'Sara Ahmed', active: true, runs: 12, spaceId: 'studio-3', ranAgo: 23 },
+  { id: 'rl-focus', name: 'Drop the lights for my focus blocks', trigger: 'meeting-starts', sceneId: 'sc-focus', lead: 5, owner: 'Sara Ahmed', active: true, runs: 9, kind: 'focus', ranAgo: 44 },
+  { id: 'rl-forum', name: 'Start The Forum an hour ahead of a session', trigger: 'meeting-starts', sceneId: 'sc-workshop', lead: 60, owner: 'Yousef Mansour', active: true, runs: 4, spaceId: 'forum', ranAgo: 96 },
+  { id: 'rl-empty', name: 'Wind the room down once it empties', trigger: 'room-empty', sceneId: 'sc-wind-down', lead: 0, owner: 'Sara Ahmed', active: false, runs: 0 },
+];
+
+export const RULES: Array<New<Rule> & { id: string }> = RULE_SEED.map(({ ranAgo, ...rule }) => ({
+  ...rule,
+  lastRun: ranAgo === undefined ? undefined : hoursAgo(ranAgo),
+}));

@@ -10,11 +10,15 @@ import {
   POSTS,
   PROJECTS,
   REQUESTS,
+  RULES,
+  SCENES,
   SPACES,
   TASKS,
   TICKETS,
   TRIBES,
   VISITS,
+  VOTES,
+  ZONES,
 } from './seed';
 import type { Entity } from './store';
 import type { Persona } from './products';
@@ -354,6 +358,82 @@ export interface Notification extends Entity {
   read: boolean;
 }
 
+export type HvacMode = 'auto' | 'cool' | 'heat' | 'fan' | 'off';
+
+export type SignState = 'available' | 'busy' | 'focus' | 'away';
+
+export type ComfortVerdict = 'cold' | 'cool' | 'right' | 'warm' | 'hot';
+
+export interface Zone extends Entity {
+  spaceId: string;
+  temp: number;
+  target: number;
+  humidity: number;
+  co2: number;
+  noise: number;
+  lux: number;
+  mode: HvacMode;
+  fan: number;
+  lights: number;
+  warmth: number;
+  blinds: number;
+  occupancy: number;
+  sign: SignState;
+  trend: number[];
+  signNote?: string;
+  setBy?: string;
+  setAt?: string;
+  fault?: string;
+}
+
+export interface ComfortVote extends Entity {
+  spaceId: string;
+  person: string;
+  verdict: ComfortVerdict;
+  at: string;
+  note?: string;
+  ticketId?: string;
+}
+
+export interface Scene extends Entity {
+  name: string;
+  summary: string;
+  glyph: string;
+  target: number;
+  mode: HvacMode;
+  fan: number;
+  lights: number;
+  warmth: number;
+  blinds: number;
+  sign: SignState;
+  owner: string;
+  shared: boolean;
+  builtIn: boolean;
+  uses: number;
+  signNote?: string;
+}
+
+export type RuleTrigger =
+  | 'meeting-starts'
+  | 'meeting-ends'
+  | 'day-starts'
+  | 'day-ends'
+  | 'room-empty'
+  | 'co2-high';
+
+export interface Rule extends Entity {
+  name: string;
+  trigger: RuleTrigger;
+  sceneId: string;
+  lead: number;
+  owner: string;
+  active: boolean;
+  runs: number;
+  spaceId?: string;
+  kind?: MeetingKind;
+  lastRun?: string;
+}
+
 export const meetings = collection<Meeting>('meetings');
 export const spaces = collection<Space>('spaces');
 export const bookings = collection<Booking>('bookings');
@@ -370,6 +450,10 @@ export const requests = collection<ServiceRequest>('requests');
 export const projects = collection<Project>('projects');
 export const tasks = collection<Task>('tasks');
 export const notifications = collection<Notification>('notifications');
+export const zones = collection<Zone>('zones');
+export const comfortVotes = collection<ComfortVote>('comfortVotes');
+export const scenes = collection<Scene>('scenes');
+export const rules = collection<Rule>('rules');
 
 export const persona = scalar<Persona>('persona', 'Employee');
 export const authed = scalar<boolean>('authed', false);
@@ -459,6 +543,22 @@ export function seedDemoData(): void {
     {
       col: notifications as never,
       rows: NOTIFICATIONS.map(row),
+    },
+    {
+      col: zones as never,
+      rows: ZONES.map(keyed),
+    },
+    {
+      col: comfortVotes as never,
+      rows: VOTES.map(row),
+    },
+    {
+      col: scenes as never,
+      rows: SCENES.map(keyed),
+    },
+    {
+      col: rules as never,
+      rows: RULES.map(keyed),
     },
   ]);
 }
