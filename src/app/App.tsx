@@ -38,9 +38,12 @@ const OmniServe = lazy(() =>
   import('./components/views/omniserve/OmniServe').then((m) => ({ default: m.OmniServe })),
 );
 
+const TaskFlow = lazy(() =>
+  import('./components/views/taskflow/TaskFlow').then((m) => ({ default: m.TaskFlow })),
+);
+
 const load = {
   calendar: lazy(() => import('./components/dixels2/CoreCalendar').then((m) => ({ default: m.CoreCalendar }))),
-  taskflow: lazy(() => import('./components/dixels2/WorkloadManagement').then((m) => ({ default: m.WorkloadManagement }))),
   atmosphere: lazy(() => import('./components/dixels2/SmartControlView').then((m) => ({ default: m.SmartControlView }))),
   pathfinder: lazy(() => import('./components/dixels2/CampusGuideView').then((m) => ({ default: m.CampusGuideView }))),
   twinspace: lazy(() => import('./components/dixels2/SpaceManagement').then((m) => ({ default: m.SpaceManagement }))),
@@ -82,7 +85,7 @@ function App() {
                 <Route index element={<Navigate to="/today" replace />} />
                 <Route path="/today" element={<Today />} />
                 <Route path="/calendar" element={<LegacyModule id="calendar" Component={load.calendar} />} />
-                <Route path="/taskflow" element={<LegacyModule id="taskflow" Component={load.taskflow} />} />
+                <Route path="/taskflow" element={<TaskFlow />} />
                 <Route path="/atmosphere" element={<LegacyModule id="atmosphere" Component={load.atmosphere} />} />
                 <Route path="/spaceos" element={<SpaceOS />} />
                 <Route path="/pathfinder" element={<LegacyModule id="pathfinder" Component={load.pathfinder} />} />

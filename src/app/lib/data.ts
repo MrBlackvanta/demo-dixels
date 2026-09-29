@@ -8,6 +8,7 @@ import {
   NOTIFICATIONS,
   ORDERS,
   POSTS,
+  PROJECTS,
   REQUESTS,
   SPACES,
   TASKS,
@@ -270,11 +271,51 @@ export interface ServiceRequest extends Entity {
   rating?: number;
 }
 
-export interface Task extends Entity {
-  title: string;
+export interface Project extends Entity {
+  key: string;
+  name: string;
+  summary: string;
+  lead: string;
+  team: string;
   due: string;
-  effort: 'quick' | 'focused' | 'deep';
+  members: string[];
+}
+
+export type TaskState = 'backlog' | 'todo' | 'doing' | 'review' | 'done';
+
+export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
+
+export interface Checkpoint {
+  label: string;
   done: boolean;
+}
+
+export interface TaskOrigin {
+  module: string;
+  ref: string;
+}
+
+export interface Task extends Entity {
+  ref: string;
+  title: string;
+  detail: string;
+  projectId: string;
+  state: TaskState;
+  priority: TaskPriority;
+  owner: string;
+  team: string;
+  estimate: number;
+  logged: number;
+  due: string;
+  raisedAt: string;
+  blockedBy: string[];
+  checklist: Checkpoint[];
+  tags: string[];
+  thread: ThreadEntry[];
+  origin?: TaskOrigin;
+  spaceId?: string;
+  startedAt?: string;
+  doneAt?: string;
 }
 
 export interface Notification extends Entity {
@@ -297,6 +338,7 @@ export const orders = collection<Order>('orders');
 export const cart = collection<CartLine>('cart');
 export const tickets = collection<Ticket>('tickets');
 export const requests = collection<ServiceRequest>('requests');
+export const projects = collection<Project>('projects');
 export const tasks = collection<Task>('tasks');
 export const notifications = collection<Notification>('notifications');
 
@@ -378,8 +420,12 @@ export function seedDemoData(): void {
       rows: REQUESTS.map(keyed),
     },
     {
+      col: projects as never,
+      rows: PROJECTS.map(keyed),
+    },
+    {
       col: tasks as never,
-      rows: TASKS.map(row),
+      rows: TASKS.map(keyed),
     },
     {
       col: notifications as never,

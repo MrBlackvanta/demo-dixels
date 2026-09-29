@@ -10,9 +10,11 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
+import { toast } from 'sonner@2.0.3';
 import { CountUp } from '../shell/CountUp';
 import { cn } from '../ui/utils';
-import { todayKey } from '../../lib/format';
+import { duration, formatDay, todayKey } from '../../lib/format';
+import { moveTo, remainingOf } from '../../lib/workload';
 import { useCollection } from '../../lib/store';
 import {
   CURRENT_USER,
@@ -22,7 +24,7 @@ import {
   tickets as ticketsCol,
   visits as visitsCol,
 } from '../../lib/data';
-import type { Meeting } from '../../lib/data';
+import type { Meeting, Task } from '../../lib/data';
 
 const timeOfDay = (hour: number): string => {
   if (hour < 12) return 'Good morning';
@@ -65,7 +67,9 @@ export function Today() {
   const greeting = timeOfDay(new Date().getHours());
   const weekday = new Date().toLocaleDateString([], { weekday: 'long' });
 
-  const openTasks = tasks.filter((task) => !task.done);
+  const myTasks = tasks.filter((task) => task.owner === CURRENT_USER.name);
+  const openTasks = myTasks.filter((task) => task.state !== 'done');
+  const nextUp = [...openTasks].sort((a, b) => a.due.localeCompare(b.due)).slice(0, 6);
   const myOpenTickets = tickets.filter(
     (ticket) => ticket.requester === CURRENT_USER.name && ticket.status !== 'resolved',
   );
@@ -74,6 +78,14 @@ export function Today() {
       visit.date === todayKey() &&
       (visit.status === 'invited' || visit.status === 'pre-registered' || visit.status === 'checked-in'),
   );
+  const finish = (task: Task) => {
+    const before = { state: task.state, doneAt: task.doneAt, thread: task.thread };
+    tasksCol.update(task.id, moveTo(task, 'done', CURRENT_USER.name));
+    toast.success(`${task.title} is done`, {
+      action: { label: 'Undo', onClick: () => tasksCol.update(task.id, before) },
+    });
+  };
+
   const liveOrder = orders.find((order) => order.status !== 'delivered');
   const dayOrder = [...meetings].sort(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
@@ -82,7 +94,7 @@ export function Today() {
   const stats = [
     { label: 'Meetings today', value: meetings.length, tone: 'brand' as const },
     { label: 'Guests expected', value: expectedGuests.length, tone: 'green' as const },
-    { label: 'Open tasks', value: openTasks.length, tone: 'neutral' as const },
+    { label: 'Your open tasks', value: openTasks.length, tone: 'neutral' as const },
     { label: 'Your open requests', value: myOpenTickets.length, tone: 'neutral' as const },
   ];
 
@@ -301,43 +313,41 @@ export function Today() {
             )}
 
             <section aria-labelledby="tasks-heading" className="dx-card overflow-hidden">
-              <div className="border-b border-line px-5 py-3.5">
+              <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3.5">
                 <h3 id="tasks-heading" className="dx-eyebrow">
                   Needs you
                 </h3>
+                <button
+                  type="button"
+                  onClick={() => navigate('/taskflow')}
+                  className="text-[0.75rem] text-ink-muted transition-colors hover:text-brand-700"
+                >
+                  All {openTasks.length} in TaskFlow
+                </button>
               </div>
               <ul className="divide-y divide-line">
-                {tasks.map((task) => (
+                {nextUp.map((task) => (
                   <li key={task.id}>
                     <button
                       type="button"
-                      onClick={() => tasksCol.update(task.id, { done: !task.done })}
-                      className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors duration-[180ms] hover:bg-nt-50"
-                      aria-pressed={task.done}
+                      onClick={() => finish(task)}
+                      className="group flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors duration-[180ms] hover:bg-nt-50"
                     >
-                      <span
-                        className={cn(
-                          'grid h-[1.125rem] w-[1.125rem] shrink-0 place-items-center rounded-full border transition-colors duration-[180ms]',
-                          task.done
-                            ? 'border-brand-600 bg-brand-600 text-nt-0'
-                            : 'border-line-strong bg-nt-0',
-                        )}
-                      >
-                        {task.done && <Check size={11} strokeWidth={3} aria-hidden="true" />}
+                      <span className="grid h-[1.125rem] w-[1.125rem] shrink-0 place-items-center rounded-full border border-line-strong bg-nt-0 text-nt-0 transition-colors duration-[180ms] group-hover:border-brand-600 group-hover:bg-brand-600">
+                        <Check
+                          size={11}
+                          strokeWidth={3}
+                          aria-hidden="true"
+                          className="opacity-0 transition-opacity duration-[180ms] group-hover:opacity-100"
+                        />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span
-                          className={cn(
-                            'block truncate text-[0.8125rem] transition-colors',
-                            task.done ? 'text-ink-subtle line-through' : 'text-ink',
-                          )}
-                        >
-                          {task.title}
-                        </span>
+                        <span className="block truncate text-[0.8125rem] text-ink">{task.title}</span>
                         <span className="block truncate text-[0.6875rem] text-ink-subtle">
-                          {task.due}
+                          {formatDay(task.due)} · {duration(remainingOf(task))}
                         </span>
                       </span>
+                      <span className="sr-only">Mark as done</span>
                     </button>
                   </li>
                 ))}

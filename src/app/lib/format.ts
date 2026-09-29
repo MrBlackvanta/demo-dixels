@@ -53,6 +53,13 @@ export const money = (amount: number): string =>
     maximumFractionDigits: 0,
   }).format(amount);
 
+export const duration = (minutes: number): string => {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+};
+
 export const initials = (name: string): string =>
   name
     .split(' ')
