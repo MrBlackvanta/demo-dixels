@@ -2,10 +2,12 @@ import { chainFor, costCentreOf, costOf, serviceById } from './catalogue';
 import { shiftDay, toClock, toMinutes, todayKey } from './format';
 import { dueFrom } from './sla';
 import type { Entity } from './store';
+import { CORE_AT, LEVELS } from './wayfinding';
 import type {
   Badge,
   Booking,
   BookingStatus,
+  Closure,
   ComfortVerdict,
   ComfortVote,
   Delivery,
@@ -17,6 +19,8 @@ import type {
   Notification,
   Order,
   Origin,
+  Place,
+  PlaceKind,
   Post,
   Project,
   Rsvp,
@@ -585,9 +589,10 @@ const DIARY: DiaryEntry[] = [
 
   { id: 'dy-design-standup-0', title: 'Design standup', kind: 'meeting', offset: 0, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
   { id: 'dy-design-sync-0', title: 'Design sync', kind: 'meeting', offset: 0, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '09:58', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
-  { id: 'dy-sara-rana-0', title: 'Sara and Rana', kind: 'one-to-one', offset: 0, start: '11:00', end: '11:30', organizer: 'Sara Ahmed', crew: ['Rana Khalil'], repeats: 'Every week', agenda: 'Weekly one to one.' },
+  { id: 'dy-sara-rana-0', title: 'Sara and Rana', kind: 'one-to-one', offset: 0, start: '11:05', end: '11:35', organizer: 'Sara Ahmed', crew: ['Rana Khalil'], spaceId: 'lotus', hold: 'confirmed', repeats: 'Every week', agenda: 'Weekly one to one.' },
   { id: 'dy-ds-office-hours-0', title: 'Design system office hours', kind: 'meeting', offset: 0, start: '16:30', end: '17:15', organizer: 'Sara Ahmed', crew: ['Yara Sabry', 'Nadia Salem', 'Rana Khalil', 'Tamer Sobhy'], spaceId: 'olive', optional: ['Nadia Salem', 'Tamer Sobhy'], unanswered: ['Tamer Sobhy'], repeats: 'Every week', agenda: 'Bring anything the library does not answer yet.' },
   { id: 'dy-focus-0', title: 'Focus — form states', kind: 'focus', offset: 0, start: '14:00', end: '15:00', organizer: 'Sara Ahmed', crew: [], spaceId: 'pod-2a', taskId: 'tf-ds-crit', agenda: 'Heads down before the crit.' },
+  { id: 'dy-roof-walk-0', title: 'Roof Garden walkthrough', kind: 'meeting', offset: 0, start: '11:45', end: '12:30', organizer: 'Yousef Mansour', crew: ['Sara Ahmed', 'Adel Rashid', 'Farah Nabil'], spaceId: 'roof-garden', hold: 'confirmed', agenda: 'Sign off the summer layout before the first booking uses it.' },
   { id: 'dy-sprint-planning-0', title: 'Sprint planning', kind: 'meeting', offset: 0, start: '09:00', end: '10:30', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Sami Kamal', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', hold: 'checked-in', arrived: '09:01', agenda: 'Size the top of the backlog and commit to a sprint.' },
   { id: 'dy-pair-review-0', title: 'Pair review', kind: 'meeting', offset: 0, start: '11:00', end: '12:00', organizer: 'Nadia Salem', crew: ['Yara Sabry'], spaceId: 'jasmine', agenda: 'Walk the push notification branch together.' },
   { id: 'dy-roadmap-0', title: 'Roadmap triage', kind: 'meeting', offset: 0, start: '14:30', end: '15:30', organizer: 'Maya Fahmy', crew: ['Karim Fouad', 'Sara Ahmed', 'Reem Othman'], spaceId: 'jasmine', maybe: ['Sara Ahmed'], agenda: 'Everything asked for this quarter, ranked honestly.' },
@@ -4062,3 +4067,199 @@ export const RULES: Array<New<Rule> & { id: string }> = RULE_SEED.map(({ ranAgo,
   ...rule,
   lastRun: ranAgo === undefined ? undefined : hoursAgo(ranAgo),
 }));
+
+type PlaceSeed = New<Place> & { id: string };
+
+interface CoreSeed {
+  coreId: string;
+  name: string;
+  kind: PlaceKind;
+  stepFree: boolean;
+  detail: string;
+}
+
+const CORE_SEED: CoreSeed[] = [
+  {
+    coreId: 'core-a',
+    name: 'Lift core A',
+    kind: 'lift',
+    stepFree: true,
+    detail: 'Four cars. The widest one is nearest the window and has the low panel.',
+  },
+  {
+    coreId: 'core-b',
+    name: 'Lift core B',
+    kind: 'lift',
+    stepFree: true,
+    detail: 'Three cars, plus the goods lift when nobody has it booked.',
+  },
+  {
+    coreId: 'stair-n',
+    name: 'North stairs',
+    kind: 'stairs',
+    stepFree: false,
+    detail: 'Fire stairs, open on every floor. Twenty-two steps between levels.',
+  },
+  {
+    coreId: 'stair-s',
+    name: 'South stairs',
+    kind: 'stairs',
+    stepFree: false,
+    detail: 'Fire stairs. Quicker than waiting for a lift if you are going one floor.',
+  },
+];
+
+const CORE_PLACES: PlaceSeed[] = LEVELS.flatMap((level) =>
+  CORE_SEED.map(({ coreId, ...core }) => ({
+    ...core,
+    id: `pl-${coreId}-${level.replace('Level ', 'l')}`,
+    coreId,
+    level,
+    x: CORE_AT[coreId].x,
+    y: CORE_AT[coreId].y,
+  })),
+);
+
+const NAMED_PLACES: PlaceSeed[] = [
+  { id: 'pl-entrance-main', name: 'Main entrance', kind: 'entrance', level: 'Level 1', x: 50, y: 96, stepFree: true, detail: 'Revolving door on the left, automatic door on the right.', hours: '06:00 – 21:00' },
+  { id: 'pl-reception', name: 'Reception', kind: 'reception', level: 'Level 1', x: 50, y: 88, stepFree: true, detail: 'Visitor badges, lost property, and the desk that can open any door.', hours: '07:00 – 19:00' },
+  { id: 'pl-atrium', name: 'The Atrium', kind: 'room', level: 'Level 1', x: 24, y: 30, stepFree: true, spaceId: 'atrium' },
+  { id: 'pl-forum', name: 'The Forum', kind: 'room', level: 'Level 1', x: 76, y: 30, stepFree: true, spaceId: 'forum' },
+  { id: 'pl-cafe-1', name: 'The Ground Café', kind: 'cafe', level: 'Level 1', x: 22, y: 66, stepFree: true, detail: 'Full menu until 14:00, then pastries and coffee.', hours: '07:00 – 16:00' },
+  { id: 'pl-post', name: 'Post and parcels', kind: 'post', level: 'Level 1', x: 78, y: 66, stepFree: true, detail: 'Personal deliveries are held here for five working days.', hours: '09:00 – 17:00' },
+  { id: 'pl-firstaid-1', name: 'First aid point', kind: 'firstaid', level: 'Level 1', x: 60, y: 88, stepFree: true, detail: 'Kit and defibrillator. Reception holds the key and is trained.' },
+  { id: 'pl-washroom-1', name: 'Washrooms', kind: 'washroom', level: 'Level 1', x: 40, y: 66, stepFree: true, detail: 'Accessible cubicle in the left-hand block.' },
+  { id: 'pl-parking', name: 'Parking link', kind: 'parking', level: 'Level 1', x: 12, y: 88, stepFree: true, detail: 'Down to Basement 1 and 2. Badge needed at the turnstile.' },
+  { id: 'pl-exit-1n', name: 'Fire exit — north', kind: 'exit', level: 'Level 1', x: 50, y: 10, stepFree: true, detail: 'Assembly point is the far side of the visitor car park.' },
+  { id: 'pl-exit-1e', name: 'Fire exit — east', kind: 'exit', level: 'Level 1', x: 92, y: 50, stepFree: true, detail: 'Opens onto the service road. Alarmed outside a drill.' },
+  { id: 'pl-mezzanine', name: 'Mezzanine reading room', kind: 'wellness', level: 'Level 1', x: 70, y: 14, stepFree: false, detail: 'Up the open stair from the atrium. Quiet by agreement, not by rule.' },
+
+  { id: 'pl-studio-3', name: 'Studio 3', kind: 'room', level: 'Level 2', x: 26, y: 30, stepFree: true, spaceId: 'studio-3' },
+  { id: 'pl-studio-4', name: 'Studio 4', kind: 'room', level: 'Level 2', x: 26, y: 70, stepFree: true, spaceId: 'studio-4' },
+  { id: 'pl-pod-2a', name: 'Pod 2-A', kind: 'room', level: 'Level 2', x: 76, y: 28, stepFree: true, spaceId: 'pod-2a' },
+  { id: 'pl-pod-2b', name: 'Pod 2-B', kind: 'room', level: 'Level 2', x: 85, y: 28, stepFree: true, spaceId: 'pod-2b' },
+  { id: 'pl-printer-2', name: 'Printer 2-A', kind: 'printer', level: 'Level 2', x: 44, y: 30, stepFree: true, detail: 'Colour and A3. Badge at the panel to release a job.' },
+  { id: 'pl-pantry-2', name: 'Pantry', kind: 'pantry', level: 'Level 2', x: 50, y: 82, stepFree: true, detail: 'Bean-to-cup machine, filtered water, and the good biscuits.' },
+  { id: 'pl-prayer-2m', name: 'Prayer room — men', kind: 'prayer', level: 'Level 2', x: 86, y: 68, stepFree: true, detail: 'Ablution facilities attached. Mats and a qibla marker inside.' },
+  { id: 'pl-prayer-2w', name: 'Prayer room — women', kind: 'prayer', level: 'Level 2', x: 11, y: 76, stepFree: true, detail: 'Ablution facilities attached. Mats and a qibla marker inside.' },
+  { id: 'pl-washroom-2', name: 'Washrooms', kind: 'washroom', level: 'Level 2', x: 50, y: 14, stepFree: true },
+  { id: 'pl-locker-2', name: 'Lockers', kind: 'locker', level: 'Level 2', x: 20, y: 42, stepFree: true, detail: 'Day lockers. Anything left overnight goes to reception.' },
+
+  { id: 'pl-cedar', name: 'Cedar', kind: 'room', level: 'Level 3', x: 24, y: 32, stepFree: true, spaceId: 'cedar' },
+  { id: 'pl-jasmine', name: 'Jasmine', kind: 'room', level: 'Level 3', x: 24, y: 66, stepFree: true, spaceId: 'jasmine' },
+  { id: 'pl-olive', name: 'Olive', kind: 'room', level: 'Level 3', x: 78, y: 66, stepFree: true, spaceId: 'olive' },
+  { id: 'pl-lab', name: 'Innovation Lab', kind: 'room', level: 'Level 3', x: 78, y: 30, stepFree: true, spaceId: 'lab' },
+  { id: 'pl-printer-3', name: 'Printer 3-A', kind: 'printer', level: 'Level 3', x: 44, y: 62, stepFree: true, detail: 'Black and white only since the colour unit moved to Level 5.' },
+  { id: 'pl-pantry-3', name: 'Pantry', kind: 'pantry', level: 'Level 3', x: 50, y: 84, stepFree: true, detail: 'The only floor with a proper kettle.' },
+  { id: 'pl-wellness-3', name: 'Wellness room', kind: 'wellness', level: 'Level 3', x: 14, y: 50, stepFree: true, detail: 'Lie-down room with a lock. Book it in SpaceOS or just use it.' },
+  { id: 'pl-washroom-3', name: 'Washrooms', kind: 'washroom', level: 'Level 3', x: 50, y: 16, stepFree: true },
+
+  { id: 'pl-maple', name: 'Maple', kind: 'room', level: 'Level 4', x: 76, y: 32, stepFree: true, spaceId: 'maple' },
+  { id: 'pl-desk-4-118', name: 'Desk 4-118', kind: 'desk', level: 'Level 4', x: 26, y: 60, stepFree: true, spaceId: 'desk-4-118' },
+  { id: 'pl-desk-4-120', name: 'Desk 4-120', kind: 'desk', level: 'Level 4', x: 26, y: 66, stepFree: true, spaceId: 'desk-4-120' },
+  { id: 'pl-desk-4-122', name: 'Desk 4-122', kind: 'desk', level: 'Level 4', x: 26, y: 72, stepFree: true, spaceId: 'desk-4-122' },
+  { id: 'pl-itbar', name: 'IT bar', kind: 'itbar', level: 'Level 4', x: 76, y: 70, stepFree: true, detail: 'Walk up with a laptop problem. No ticket needed before 16:00.', hours: '09:00 – 17:00' },
+  { id: 'pl-printer-4', name: 'Printer 4-B', kind: 'printer', level: 'Level 4', x: 44, y: 60, stepFree: true, detail: 'Nearest unit to the design desks.' },
+  { id: 'pl-pantry-4', name: 'Pantry', kind: 'pantry', level: 'Level 4', x: 50, y: 84, stepFree: true },
+  { id: 'pl-locker-4', name: 'Lockers', kind: 'locker', level: 'Level 4', x: 86, y: 60, stepFree: true },
+  { id: 'pl-washroom-4', name: 'Washrooms', kind: 'washroom', level: 'Level 4', x: 50, y: 16, stepFree: true, detail: 'Accessible cubicle on the north side.' },
+
+  { id: 'pl-orchid', name: 'Orchid', kind: 'room', level: 'Level 5', x: 76, y: 30, stepFree: true, spaceId: 'orchid' },
+  { id: 'pl-lotus', name: 'Lotus', kind: 'room', level: 'Level 5', x: 24, y: 30, stepFree: true, spaceId: 'lotus' },
+  { id: 'pl-printer-5', name: 'Printer 5-A', kind: 'printer', level: 'Level 5', x: 44, y: 62, stepFree: true, detail: 'Colour, A3, and the only one that staples.' },
+  { id: 'pl-pantry-5', name: 'Pantry', kind: 'pantry', level: 'Level 5', x: 50, y: 84, stepFree: true },
+  { id: 'pl-firstaid-5', name: 'First aid point', kind: 'firstaid', level: 'Level 5', x: 60, y: 44, stepFree: true, detail: 'Defibrillator by the lift lobby. Four trained first aiders on this floor.' },
+  { id: 'pl-washroom-5', name: 'Washrooms', kind: 'washroom', level: 'Level 5', x: 50, y: 16, stepFree: true },
+
+  { id: 'pl-boardroom', name: 'The Boardroom', kind: 'room', level: 'Level 6', x: 24, y: 30, stepFree: true, spaceId: 'boardroom' },
+  { id: 'pl-skyline', name: 'Skyline Lounge', kind: 'room', level: 'Level 6', x: 72, y: 62, stepFree: true, spaceId: 'skyline' },
+  { id: 'pl-cafe-6', name: 'Sky Café', kind: 'cafe', level: 'Level 6', x: 50, y: 84, stepFree: true, detail: 'Smaller menu than the ground floor, much better view.', hours: '08:00 – 15:00' },
+  { id: 'pl-washroom-6', name: 'Washrooms', kind: 'washroom', level: 'Level 6', x: 50, y: 16, stepFree: true },
+
+  { id: 'pl-roof-garden', name: 'Roof Garden', kind: 'room', level: 'Level 7', x: 50, y: 18, stepFree: true, spaceId: 'roof-garden' },
+  { id: 'pl-terrace-lower', name: 'Lower terrace', kind: 'terrace', level: 'Level 7', x: 22, y: 22, stepFree: true, detail: 'Shaded until mid-afternoon. Same view as the upper deck.' },
+  { id: 'pl-terrace-upper', name: 'Upper deck', kind: 'terrace', level: 'Level 7', x: 80, y: 14, stepFree: false, detail: 'Six steps up from the garden. There is no ramp — the lower terrace is level.' },
+  { id: 'pl-pantry-7', name: 'Pantry', kind: 'pantry', level: 'Level 7', x: 50, y: 78, stepFree: true },
+  { id: 'pl-washroom-7', name: 'Washrooms', kind: 'washroom', level: 'Level 7', x: 68, y: 78, stepFree: true },
+];
+
+export const PLACES: PlaceSeed[] = [...NAMED_PLACES, ...CORE_PLACES];
+
+interface ClosureSeed {
+  id: string;
+  title: string;
+  scope: Closure['scope'];
+  targetId: string;
+  reason: string;
+  fromOffset: number;
+  untilOffset: number;
+  raisedBy: string;
+  active: boolean;
+  ticketId?: string;
+}
+
+const CLOSURE_SEED: ClosureSeed[] = [
+  {
+    id: 'cl-stair-s',
+    title: 'South stairs shut for handrail replacement',
+    scope: 'core',
+    targetId: 'stair-s',
+    reason: 'Both handrails are being replaced between Levels 1 and 7. The north stairs stay open throughout, and no step-free route uses these anyway.',
+    fromOffset: -1,
+    untilOffset: 2,
+    raisedBy: 'Yousef Mansour',
+    active: true,
+  },
+  {
+    id: 'cl-printer-4b',
+    title: 'Printer 4-B is out of service',
+    scope: 'place',
+    targetId: 'pl-printer-4',
+    reason: 'Fuser failure. The part is due Thursday. Printer 3-A and Printer 5-A are both taking jobs.',
+    fromOffset: -2,
+    untilOffset: 1,
+    raisedBy: 'Hassan Iqbal',
+    active: true,
+  },
+  {
+    id: 'cl-cafe-6',
+    title: 'Sky Café closed for a deep clean',
+    scope: 'place',
+    targetId: 'pl-cafe-6',
+    reason: 'Annual deep clean. The Ground Café is open as usual.',
+    fromOffset: 0,
+    untilOffset: 0,
+    raisedBy: 'Adel Rashid',
+    active: true,
+  },
+  {
+    id: 'cl-core-b',
+    title: 'Lift core B annual service',
+    scope: 'core',
+    targetId: 'core-b',
+    reason: 'All three cars out for the statutory inspection. Core A carries the building for two days, so expect longer waits.',
+    fromOffset: 1,
+    untilOffset: 2,
+    raisedBy: 'Yousef Mansour',
+    active: true,
+  },
+  {
+    id: 'cl-pantry-3',
+    title: 'Level 3 pantry was closed for a leak',
+    scope: 'place',
+    targetId: 'pl-pantry-3',
+    reason: 'Supply pipe to the boiler failed. Fixed and back in use.',
+    fromOffset: -6,
+    untilOffset: -4,
+    raisedBy: 'Hassan Iqbal',
+    active: false,
+  },
+];
+
+export const CLOSURES: Array<New<Closure> & { id: string }> = CLOSURE_SEED.map(
+  ({ fromOffset, untilOffset, ...closure }) => ({
+    ...closure,
+    from: day(fromOffset),
+    until: day(untilOffset),
+  }),
+);

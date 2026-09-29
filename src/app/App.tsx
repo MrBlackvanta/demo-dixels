@@ -50,8 +50,11 @@ const Atmosphere = lazy(() =>
   import('./components/views/atmosphere/Atmosphere').then((m) => ({ default: m.Atmosphere })),
 );
 
+const Pathfinder = lazy(() =>
+  import('./components/views/pathfinder/Pathfinder').then((m) => ({ default: m.Pathfinder })),
+);
+
 const load = {
-  pathfinder: lazy(() => import('./components/dixels2/CampusGuideView').then((m) => ({ default: m.CampusGuideView }))),
   twinspace: lazy(() => import('./components/dixels2/SpaceManagement').then((m) => ({ default: m.SpaceManagement }))),
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
   vmsadmin: lazy(() => import('./components/dixels2/VmsAdmin').then((m) => ({ default: m.VmsAdmin }))),
@@ -94,7 +97,7 @@ function App() {
                 <Route path="/taskflow" element={<TaskFlow />} />
                 <Route path="/atmosphere" element={<Atmosphere />} />
                 <Route path="/spaceos" element={<SpaceOS />} />
-                <Route path="/pathfinder" element={<LegacyModule id="pathfinder" Component={load.pathfinder} />} />
+                <Route path="/pathfinder" element={<Pathfinder />} />
                 <Route path="/twinspace" element={<LegacyModule id="twinspace" Component={load.twinspace} padded />} />
                 <Route path="/building-ops" element={<LegacyModule id="buildingops" Component={load.buildingops} />} />
                 <Route path="/visitflow" element={<VisitFlow />} />

@@ -2,11 +2,13 @@ import { collection, scalar, seedOnce } from './store';
 import {
   BADGES,
   BOOKINGS,
+  CLOSURES,
   DELIVERIES,
   EVENTS,
   MEETINGS,
   NOTIFICATIONS,
   ORDERS,
+  PLACES,
   POSTS,
   PROJECTS,
   REQUESTS,
@@ -434,6 +436,55 @@ export interface Rule extends Entity {
   lastRun?: string;
 }
 
+export type PlaceKind =
+  | 'room'
+  | 'desk'
+  | 'lift'
+  | 'stairs'
+  | 'entrance'
+  | 'reception'
+  | 'cafe'
+  | 'pantry'
+  | 'printer'
+  | 'prayer'
+  | 'wellness'
+  | 'washroom'
+  | 'firstaid'
+  | 'exit'
+  | 'locker'
+  | 'parking'
+  | 'post'
+  | 'terrace'
+  | 'itbar';
+
+export interface Place extends Entity {
+  name: string;
+  kind: PlaceKind;
+  level: string;
+  x: number;
+  y: number;
+  stepFree: boolean;
+  spaceId?: string;
+  coreId?: string;
+  detail?: string;
+  hours?: string;
+  addedBy?: string;
+}
+
+export type ClosureScope = 'place' | 'core';
+
+export interface Closure extends Entity {
+  title: string;
+  scope: ClosureScope;
+  targetId: string;
+  reason: string;
+  from: string;
+  until: string;
+  raisedBy: string;
+  active: boolean;
+  ticketId?: string;
+}
+
 export const meetings = collection<Meeting>('meetings');
 export const spaces = collection<Space>('spaces');
 export const bookings = collection<Booking>('bookings');
@@ -454,11 +505,16 @@ export const zones = collection<Zone>('zones');
 export const comfortVotes = collection<ComfortVote>('comfortVotes');
 export const scenes = collection<Scene>('scenes');
 export const rules = collection<Rule>('rules');
+export const places = collection<Place>('places');
+export const closures = collection<Closure>('closures');
 
 export const persona = scalar<Persona>('persona', 'Employee');
 export const authed = scalar<boolean>('authed', false);
 export const sidebarOpen = scalar<boolean>('sidebarOpen', true);
 export const orderDestination = scalar<string>('orderDestination', 'Desk 4-118');
+export const standingAt = scalar<string>('standingAt', 'pl-desk-4-118');
+export const stepFreeOnly = scalar<boolean>('stepFreeOnly', false);
+export const savedPlaces = scalar<string[]>('savedPlaces', []);
 
 export const CURRENT_USER = {
   name: 'Sara Ahmed',
@@ -559,6 +615,14 @@ export function seedDemoData(): void {
     {
       col: rules as never,
       rows: RULES.map(keyed),
+    },
+    {
+      col: places as never,
+      rows: PLACES.map(keyed),
+    },
+    {
+      col: closures as never,
+      rows: CLOSURES.map(keyed),
     },
   ]);
 }
