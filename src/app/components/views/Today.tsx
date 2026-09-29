@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner@2.0.3';
 import { CountUp } from '../shell/CountUp';
 import { cn } from '../ui/utils';
+import { NoticeStrip } from './content/NoticeStrip';
 import { duration, formatDay, initials, toMinutes, todayKey } from '../../lib/format';
 import { moveTo, remainingOf } from '../../lib/workload';
 import { byStart, isOnInvite, nowMinutes } from '../../lib/agenda';
@@ -82,6 +83,10 @@ export function Today() {
       visit.date === todayKey() &&
       (visit.status === 'invited' || visit.status === 'pre-registered' || visit.status === 'checked-in'),
   );
+  const myNextGuest = expectedGuests
+    .filter((visit) => visit.host === CURRENT_USER.name && visit.status !== 'checked-in')
+    .sort((a, b) => toMinutes(a.time) - toMinutes(b.time))[0];
+
   const finish = (task: Task) => {
     const before = { state: task.state, doneAt: task.doneAt, thread: task.thread };
     tasksCol.update(task.id, moveTo(task, 'done', CURRENT_USER.name));
@@ -113,6 +118,8 @@ export function Today() {
           </h2>
           <p className="mt-2 text-body-lg text-ink-muted">Everything you need for the day ahead.</p>
         </header>
+
+        <NoticeStrip />
 
         <div className="grid gap-5 xl:grid-cols-[1.55fr_1fr]">
           <section aria-labelledby="next-heading" className="dx-card overflow-hidden">
@@ -183,13 +190,24 @@ export function Today() {
               </div>
 
               <p className="mb-5 text-[1.0625rem] leading-snug tracking-[-0.02em]">
-                Layla arrives at 13:00. I can get everything ready.
+                {myNextGuest === undefined
+                  ? 'No guests of yours today. I will keep the afternoon clear.'
+                  : `${myNextGuest.guest.split(' ')[0]} arrives at ${myNextGuest.time}. I can get everything ready.`}
               </p>
 
               <ul className="mb-6 space-y-2.5">
                 {[
-                  { label: 'Orchid held for the review', product: 'SpaceOS' },
-                  { label: 'Parking bay reserved', product: 'ParkFlow' },
+                  {
+                    label:
+                      myNextGuest?.spaceId === undefined
+                        ? 'A room held for the visit'
+                        : `${spaces.find((space) => space.id === myNextGuest.spaceId)?.name ?? 'A room'} held for the ${myNextGuest.purpose.toLowerCase()}`,
+                    product: 'SpaceOS',
+                  },
+                  {
+                    label: myNextGuest?.parking === true ? 'Parking bay reserved' : 'Arriving by metro, no bay needed',
+                    product: 'ParkFlow',
+                  },
                   { label: 'Coffee for two, on arrival', product: 'Nourish' },
                 ].map((item) => (
                   <li key={item.label} className="flex items-start gap-2.5 text-[0.8125rem]">

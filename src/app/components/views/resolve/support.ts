@@ -2,6 +2,7 @@ import { Coffee, Laptop, MonitorPlay, ShieldCheck, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { SLA_HOURS, dueFrom, minutesLeft, slaState } from '../../../lib/sla';
 import type {
+  Entry,
   Ticket,
   TicketPriority,
   TicketStatus,
@@ -223,90 +224,32 @@ export interface Article {
   keywords: string[];
 }
 
-export const ARTICLES: Article[] = [
-  {
-    id: 'kb-guest-wifi',
-    title: 'Getting a visitor onto the guest network',
-    team: 'IT',
-    body: 'Guest codes are printed on the badge slip and expire at midnight. Reception can reprint a batch from VisitFlow without raising a ticket — open the visit, then Reissue access.',
-    keywords: ['wifi', 'wi-fi', 'guest', 'visitor', 'network', 'code', 'internet'],
-  },
-  {
-    id: 'kb-room-display',
-    title: 'A room display shows no signal',
-    team: 'AV',
-    body: 'Hold the input button on the table plate for three seconds to force a re-handshake. If USB-C charges but never mirrors, the cable is power-only — swap it for the labelled one in the cubby.',
-    keywords: ['display', 'projector', 'screen', 'signal', 'hdmi', 'usb-c', 'mirror', 'present'],
-  },
-  {
-    id: 'kb-temperature',
-    title: 'Changing the temperature in a room you booked',
-    team: 'Workplace',
-    body: 'Atmosphere lets you nudge any room you hold a booking for by two degrees either way. Anything beyond that is a floor-wide setpoint and does need a ticket.',
-    keywords: ['cold', 'hot', 'warm', 'freezing', 'temperature', 'ac', 'air', 'comfort', 'heating'],
-  },
-  {
-    id: 'kb-badge-lost',
-    title: 'Lost your badge',
-    team: 'Security',
-    body: 'Report it the same day so the card can be voided. Reception issues a temporary badge against your photo, and the replacement is ready the next working morning.',
-    keywords: ['badge', 'card', 'lost', 'access', 'door', 'reader', 'pass'],
-  },
-  {
-    id: 'kb-password',
-    title: 'Resetting your password without losing access',
-    team: 'IT',
-    body: 'Reset from the portal, then sign out of every device before signing back in. Sessions that keep the old token are the usual reason apps bounce you back to the login screen.',
-    keywords: ['password', 'sso', 'login', 'locked', 'account', 'sign in', 'reset', 'access'],
-  },
-  {
-    id: 'kb-desk-height',
-    title: 'Standing desks that will not move',
-    team: 'Workplace',
-    body: 'Hold the down arrow for ten seconds to run a reset cycle — the desk drops a centimetre and beeps twice. If it does not beep, the motor has jammed and needs a ticket.',
-    keywords: ['desk', 'standing', 'height', 'motor', 'stuck', 'chair', 'furniture'],
-  },
-  {
-    id: 'kb-printer',
-    title: 'Clearing a printer jam',
-    team: 'IT',
-    body: 'Open tray two and pull the sheet in the direction of travel, never backwards. Repeat jams on double-sided jobs mean a worn duplex roller, which is a ticket.',
-    keywords: ['printer', 'print', 'jam', 'paper', 'toner', 'duplex', 'scan'],
-  },
-  {
-    id: 'kb-parking',
-    title: 'Booking a visitor parking bay',
-    team: 'Security',
-    body: 'Tick Parking when you invite the visitor in VisitFlow and a bay is held against their arrival window. Bays released less than an hour before arrival are not guaranteed.',
-    keywords: ['parking', 'car', 'bay', 'barrier', 'visitor', 'garage'],
-  },
-  {
-    id: 'kb-cafe-order',
-    title: 'Changing or cancelling a café order',
-    team: 'Catering',
-    body: 'Orders can be changed in Nourish until the kitchen starts them. Once the status reads Preparing, talk to the counter rather than raising a ticket — it is faster.',
-    keywords: ['cafe', 'coffee', 'order', 'food', 'lunch', 'pantry', 'milk', 'kitchen'],
-  },
-  {
-    id: 'kb-vpn',
-    title: 'Calls dropping when the VPN reconnects',
-    team: 'IT',
-    body: 'Clients older than two releases renegotiate mid-call. Check the version under About and install the update from the company portal before raising anything.',
-    keywords: ['vpn', 'drop', 'call', 'disconnect', 'slow', 'network', 'teams', 'zoom'],
-  },
-];
+export const articlesFrom = (entries: Entry[]): Article[] =>
+  entries
+    .filter(
+      (entry) =>
+        entry.status === 'live' && entry.surfaces.includes('resolve') && entry.team !== undefined,
+    )
+    .map((entry) => ({
+      id: entry.id,
+      title: entry.title,
+      team: entry.team as TicketTeam,
+      body: entry.body,
+      keywords: entry.keywords,
+    }));
 
-export const suggest = (text: string): Article[] => {
+export const suggest = (articles: Article[], text: string): Article[] => {
   const words = text
     .toLowerCase()
     .split(/[^a-z-]+/)
     .filter((word) => word.length > 2);
   if (words.length === 0) return [];
 
-  return ARTICLES.map((article) => ({
-    article,
-    score: article.keywords.filter((key) => words.some((word) => key.includes(word))).length,
-  }))
+  return articles
+    .map((article) => ({
+      article,
+      score: article.keywords.filter((key) => words.some((word) => key.includes(word))).length,
+    }))
     .filter((hit) => hit.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 2)

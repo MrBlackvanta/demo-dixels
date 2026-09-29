@@ -1,11 +1,13 @@
 import { toClock, toMinutes, todayKey } from '../../../lib/format';
 import { nowMinutes } from '../../../lib/agenda';
+import { showing } from '../../../lib/publishing';
 import { MENU } from '../nourish/menu';
 import type {
   Booking,
   Canvas,
   CanvasTone,
   Closure,
+  Entry,
   GatherEvent,
   Screen,
   Space,
@@ -29,6 +31,7 @@ export interface Board {
   events: GatherEvent[];
   zones: Zone[];
   closures: Closure[];
+  entries: Entry[];
 }
 
 const SOURCE_NAME: Record<Canvas['source'], string> = {
@@ -44,6 +47,15 @@ const SOURCE_NAME: Record<Canvas['source'], string> = {
 export const sourceName = (source: Canvas['source']): string => SOURCE_NAME[source];
 
 export const isLiveSource = (source: Canvas['source']): boolean => source !== 'notice';
+
+const boundToEntry = (canvas: Pick<Canvas, 'source' | 'entryId'>): boolean =>
+  canvas.source === 'notice' && canvas.entryId !== undefined;
+
+export const sourceLabel = (canvas: Pick<Canvas, 'source' | 'entryId'>): string =>
+  boundToEntry(canvas) ? 'Content' : SOURCE_NAME[canvas.source];
+
+export const readsLive = (canvas: Pick<Canvas, 'source' | 'entryId'>): boolean =>
+  isLiveSource(canvas.source) || boundToEntry(canvas);
 
 const shortName = (full: string): string => full.split(' ')[0];
 
@@ -253,14 +265,35 @@ const wayfinding = (canvas: Canvas, board: Board): Frame => {
   };
 };
 
-const notice = (canvas: Canvas): Frame => ({
-  eyebrow: 'Notice',
-  headline: canvas.headline ?? canvas.title,
-  lines: canvas.body === undefined ? [] : [canvas.body],
-  footnote: canvas.footnote,
-  tone: canvas.tone,
-  source: SOURCE_NAME.notice,
+const NOTICE_EYEBROW: Record<Entry['kind'], string> = {
+  notice: 'Notice',
+  policy: 'How we do it here',
+  howto: 'Good to know',
+  welcome: 'Welcome',
+};
+
+export const entryFrame = (entry: Entry, tone: CanvasTone, footnote?: string): Frame => ({
+  eyebrow: NOTICE_EYEBROW[entry.kind],
+  headline: entry.title,
+  lines: [entry.body],
+  footnote,
+  tone,
+  source: 'Content',
 });
+
+const notice = (canvas: Canvas, board: Board): Frame => {
+  const entry = board.entries.find((row) => row.id === canvas.entryId);
+  if (entry !== undefined && showing(entry)) return entryFrame(entry, canvas.tone, canvas.footnote);
+
+  return {
+    eyebrow: 'Notice',
+    headline: canvas.headline ?? canvas.title,
+    lines: canvas.body === undefined ? [] : [canvas.body],
+    footnote: canvas.footnote,
+    tone: canvas.tone,
+    source: SOURCE_NAME.notice,
+  };
+};
 
 export function paint(canvas: Canvas, board: Board, screen?: Screen): Frame {
   switch (canvas.source) {
@@ -277,7 +310,7 @@ export function paint(canvas: Canvas, board: Board, screen?: Screen): Frame {
     case 'wayfinding':
       return wayfinding(canvas, board);
     default:
-      return notice(canvas);
+      return notice(canvas, board);
   }
 }
 

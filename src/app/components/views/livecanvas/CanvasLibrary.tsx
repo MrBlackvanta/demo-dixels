@@ -1,7 +1,7 @@
 import { Pencil, Zap } from 'lucide-react';
 import { cn } from '../../ui/utils';
 import { ScreenCanvas } from './ScreenCanvas';
-import { isLiveSource, sourceName } from './paint';
+import { readsLive, sourceLabel } from './paint';
 import type { Canvas, Channel } from '../../../lib/data';
 import type { Board } from './paint';
 import { paint } from './paint';
@@ -18,7 +18,7 @@ export function CanvasLibrary({ canvases, channels, board, onEdit }: CanvasLibra
     <ul className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
       {canvases.map((canvas) => {
         const used = channels.filter((channel) => channel.canvasIds.includes(canvas.id));
-        const live = isLiveSource(canvas.source);
+        const live = readsLive(canvas);
 
         return (
           <li key={canvas.id} className="rounded-sm border border-line bg-nt-0 p-3">
@@ -37,7 +37,7 @@ export function CanvasLibrary({ canvases, channels, board, onEdit }: CanvasLibra
                     )}
                   >
                     {live && <Zap size={9} aria-hidden="true" />}
-                    {sourceName(canvas.source)}
+                    {sourceLabel(canvas)}
                   </span>
                   <span>{canvas.seconds}s</span>
                 </p>

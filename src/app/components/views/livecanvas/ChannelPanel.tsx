@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Minus, Plus, X } from 'lucide-react';
 import { cn } from '../../ui/utils';
-import { sourceName, windowLabel } from './paint';
+import { sourceLabel, windowLabel } from './paint';
 import type { Canvas, Channel, Screen } from '../../../lib/data';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -103,7 +103,7 @@ export function ChannelPanel({
                   {canvas.title}
                 </span>
                 <span className="mt-0.5 block text-[0.6875rem] text-ink-muted">
-                  {sourceName(canvas.source)}
+                  {sourceLabel(canvas)}
                 </span>
               </span>
 

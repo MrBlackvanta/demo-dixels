@@ -58,12 +58,15 @@ const LiveCanvas = lazy(() =>
   import('./components/views/livecanvas/LiveCanvas').then((m) => ({ default: m.LiveCanvas })),
 );
 
+const Content = lazy(() =>
+  import('./components/views/content/Content').then((m) => ({ default: m.Content })),
+);
+
 const load = {
   twinspace: lazy(() => import('./components/dixels2/SpaceManagement').then((m) => ({ default: m.SpaceManagement }))),
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
   vmsadmin: lazy(() => import('./components/dixels2/VmsAdmin').then((m) => ({ default: m.VmsAdmin }))),
   security: lazy(() => import('./components/dixels2/VmsSecurity').then((m) => ({ default: m.VmsSecurity }))),
-  content: lazy(() => import('./components/dixels2/ContentManagerView').then((m) => ({ default: m.ContentManagerView }))),
   vault: lazy(() => import('./components/dixels2/DigitalAssetsView').then((m) => ({ default: m.DigitalAssetsView }))),
 };
 
@@ -112,7 +115,7 @@ function App() {
                 <Route path="/omniserve" element={<OmniServe />} />
                 <Route path="/resolve" element={<Resolve />} />
                 <Route path="/livecanvas" element={<LiveCanvas />} />
-                <Route path="/content" element={<LegacyModule id="content" Component={load.content} />} />
+                <Route path="/content" element={<Content />} />
                 <Route path="/vault" element={<LegacyModule id="vault" Component={load.vault} />} />
                 <Route path="*" element={<LegacyModule id="unbuilt" />} />
               </Route>

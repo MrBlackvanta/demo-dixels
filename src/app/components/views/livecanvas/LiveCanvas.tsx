@@ -10,6 +10,7 @@ import {
   canvases as canvasesCol,
   channels as channelsCol,
   closures as closuresCol,
+  entries as entriesCol,
   events as eventsCol,
   places as placesCol,
   screens as screensCol,
@@ -33,7 +34,7 @@ import type { ScreenDraft } from './ScreenDialog';
 import { StageRail } from './StageRail';
 import { Toolbar } from './Toolbar';
 import type { Lens } from './Toolbar';
-import { isLiveSource, onAirNow, paint, playingAt } from './paint';
+import { onAirNow, paint, playingAt, readsLive } from './paint';
 import type { Board } from './paint';
 
 const TICK_MS = 1000;
@@ -60,6 +61,7 @@ export function LiveCanvas() {
   const zones = useCollection(zonesCol);
   const closures = useCollection(closuresCol);
   const places = useCollection(placesCol);
+  const entries = useCollection(entriesCol);
 
   const [lens, setLens] = useState('wall');
   const [pickedScreen, setPickedScreen] = useState<string | null>(null);
@@ -76,8 +78,8 @@ export function LiveCanvas() {
   }, []);
 
   const board: Board = useMemo(
-    () => ({ spaces, bookings, visits, events, zones, closures }),
-    [spaces, bookings, visits, events, zones, closures],
+    () => ({ spaces, bookings, visits, events, zones, closures, entries }),
+    [spaces, bookings, visits, events, zones, closures, entries],
   );
 
   const canvasById = useMemo(
@@ -146,7 +148,7 @@ export function LiveCanvas() {
     },
     {
       label: 'Canvases that update themselves',
-      value: canvases.filter((canvas) => isLiveSource(canvas.source)).length,
+      value: canvases.filter(readsLive).length,
       tone: 'neutral' as const,
     },
   ];
@@ -240,6 +242,7 @@ export function LiveCanvas() {
       headline: draft.headline === '' ? undefined : draft.headline,
       body: draft.body === '' ? undefined : draft.body,
       footnote: draft.footnote === '' ? undefined : draft.footnote,
+      entryId: draft.entryId,
     };
 
     if (canvasDraft?.id === undefined) {
@@ -453,9 +456,9 @@ export function LiveCanvas() {
                 Why this stays right
               </p>
               <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
-                {canvases.filter((canvas) => isLiveSource(canvas.source)).length} of{' '}
-                {canvases.length} canvases read another product directly. Nobody retypes the menu at
-                07:00, and a room panel is never wrong about the meeting behind the door.
+                {canvases.filter(readsLive).length} of {canvases.length} canvases read another
+                product directly. Nobody retypes the menu at 07:00, a room panel is never wrong
+                about the meeting behind the door, and a notice says whatever Content says it says.
               </p>
               <p className="mt-2.5 text-[0.75rem] text-ink-subtle">
                 It is {toClock(clock)}. Nothing here was typed twice.

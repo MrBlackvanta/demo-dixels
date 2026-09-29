@@ -2,7 +2,7 @@ import { MonitorPause, MonitorPlay, Radio, SkipForward, Sun } from 'lucide-react
 import { cn } from '../../ui/utils';
 import { timeAgo } from '../../../lib/format';
 import { ScreenCanvas } from './ScreenCanvas';
-import { sourceName, windowLabel } from './paint';
+import { sourceLabel, windowLabel } from './paint';
 import type { Canvas, Channel, Screen } from '../../../lib/data';
 import type { Frame } from './paint';
 
@@ -80,7 +80,7 @@ export function StageRail({
 
         {!dark && canvas !== undefined && (
           <p className="mt-3 text-[0.75rem] text-ink-muted">
-            <span className="font-medium text-ink">{canvas.title}</span> · {sourceName(canvas.source)}{' '}
+            <span className="font-medium text-ink">{canvas.title}</span> · {sourceLabel(canvas)}{' '}
             · {secondsLeft}s left
           </p>
         )}

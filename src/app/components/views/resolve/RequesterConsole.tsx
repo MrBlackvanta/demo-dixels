@@ -4,7 +4,7 @@ import { toast } from 'sonner@2.0.3';
 import { cn } from '../../ui/utils';
 import { CountUp } from '../../shell/CountUp';
 import { useCollection } from '../../../lib/store';
-import { CURRENT_USER, tickets as ticketsCol } from '../../../lib/data';
+import { CURRENT_USER, entries as entriesCol, tickets as ticketsCol } from '../../../lib/data';
 import { dueFrom, slaLabel } from '../../../lib/sla';
 import type { Ticket, TicketPriority, TicketTeam } from '../../../lib/data';
 import { EmptyState } from '../../shell/EmptyState';
@@ -14,12 +14,12 @@ import { TicketSheet } from './TicketSheet';
 import { Toolbar } from './Toolbar';
 import type { Lens } from './Toolbar';
 import {
-  ARTICLES,
   NO_FILTERS,
   PRIORITY_TARGET,
   TEAMS,
   TEAM_BLURB,
   TEAM_ICON,
+  articlesFrom,
   byNewest,
   isMine,
   matchesFilters,
@@ -34,6 +34,8 @@ const me = CURRENT_USER.name;
 
 export function RequesterConsole() {
   const allTickets = useCollection(ticketsCol);
+  const published = useCollection(entriesCol);
+  const articles = useMemo(() => articlesFrom(published), [published]);
 
   const [lens, setLens] = useState('live');
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -189,7 +191,7 @@ export function RequesterConsole() {
           <div className="grid gap-3 bg-nt-50 p-4 sm:grid-cols-2">
             {TEAMS.map((team) => {
               const Glyph = TEAM_ICON[team];
-              const answers = ARTICLES.filter((article) => article.team === team);
+              const answers = articles.filter((article) => article.team === team);
               if (answers.length === 0) return null;
 
               return (

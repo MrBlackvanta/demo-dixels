@@ -6,6 +6,7 @@ import {
   CHANNELS,
   CLOSURES,
   DELIVERIES,
+  ENTRIES,
   EVENTS,
   MEETINGS,
   NOTIFICATIONS,
@@ -526,6 +527,7 @@ export interface Canvas extends Entity {
   headline?: string;
   body?: string;
   footnote?: string;
+  entryId?: string;
 }
 
 export interface Channel extends Entity {
@@ -555,6 +557,53 @@ export interface SignRule extends Entity {
   firedFor?: string;
 }
 
+export type EntryKind = 'notice' | 'policy' | 'howto' | 'welcome';
+
+export type EntryStatus = 'draft' | 'review' | 'scheduled' | 'live' | 'retired';
+
+export type EntrySurface = 'today' | 'livecanvas' | 'resolve';
+
+export type EntryLocale = 'ar' | 'fr';
+
+export interface Revision {
+  version: number;
+  savedAt: string;
+  savedBy: string;
+  note: string;
+  title: string;
+  body: string;
+}
+
+export interface Translation {
+  locale: EntryLocale;
+  title: string;
+  body: string;
+  fromVersion: number;
+  updatedAt: string;
+  by: string;
+}
+
+export interface Entry extends Entity {
+  title: string;
+  slug: string;
+  kind: EntryKind;
+  status: EntryStatus;
+  summary: string;
+  body: string;
+  owner: string;
+  surfaces: EntrySurface[];
+  keywords: string[];
+  version: number;
+  history: Revision[];
+  translations: Translation[];
+  reads: number;
+  team?: TicketTeam;
+  reviewer?: string;
+  reviewNote?: string;
+  liveFrom?: string;
+  retireOn?: string;
+}
+
 export const meetings = collection<Meeting>('meetings');
 export const spaces = collection<Space>('spaces');
 export const bookings = collection<Booking>('bookings');
@@ -581,6 +630,7 @@ export const screens = collection<Screen>('screens');
 export const canvases = collection<Canvas>('canvases');
 export const channels = collection<Channel>('channels');
 export const signRules = collection<SignRule>('signRules');
+export const entries = collection<Entry>('entries');
 
 export const persona = scalar<Persona>('persona', 'Employee');
 export const authed = scalar<boolean>('authed', false);
@@ -607,9 +657,9 @@ const row = <T,>(data: T, i: number) => ({
 });
 
 const keyed = <T extends { id: string }>(data: T) => ({
-  ...data,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  ...data,
 });
 
 export function seedDemoData(): void {
@@ -713,6 +763,10 @@ export function seedDemoData(): void {
     {
       col: signRules as never,
       rows: SIGN_RULES.map(keyed),
+    },
+    {
+      col: entries as never,
+      rows: ENTRIES.map(keyed),
     },
   ]);
 }

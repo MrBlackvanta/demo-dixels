@@ -16,6 +16,7 @@ export interface CanvasDraft {
   headline: string;
   body: string;
   footnote: string;
+  entryId?: string;
 }
 
 export const blankCanvas = (): CanvasDraft => ({
@@ -36,6 +37,7 @@ export const draftFromCanvas = (canvas: Canvas): CanvasDraft => ({
   headline: canvas.headline ?? '',
   body: canvas.body ?? '',
   footnote: canvas.footnote ?? '',
+  entryId: canvas.entryId,
 });
 
 const SOURCES: CanvasSource[] = [
@@ -86,6 +88,8 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
     setDraft((current) => ({ ...current, [key]: value }));
 
   const live = isLiveSource(draft.source);
+  const entry = board.entries.find((row) => row.id === draft.entryId);
+  const bound = draft.source === 'notice' && entry !== undefined;
 
   const preview = paint(
     {
@@ -100,6 +104,7 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
       headline: draft.headline || draft.title || 'Your headline here',
       body: draft.body || undefined,
       footnote: draft.footnote || undefined,
+      entryId: draft.entryId,
     },
     board,
   );
@@ -109,7 +114,7 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
 
     const found: Errors = {};
     if (draft.title.trim().length < 3) found.title = 'Give it a name you will recognise in a list.';
-    if (!live && draft.headline.trim().length < 3)
+    if (!live && !bound && draft.headline.trim().length < 3)
       found.headline = 'A notice needs something to say.';
 
     setErrors(found);
@@ -200,11 +205,28 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
                 </select>
                 <p className="mt-1.5 flex items-start gap-1.5 text-[0.75rem] leading-relaxed text-ink-muted">
                   {live && <Zap size={12} className="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />}
-                  {WHERE_FROM[draft.source]}
+                  {bound ? 'Bound to an entry in Content, so the words follow whatever is published there.' : WHERE_FROM[draft.source]}
                 </p>
               </div>
 
-              {!live && (
+              {bound && entry !== undefined && (
+                <div className="rounded-sm border border-brand-200 bg-brand-50/50 px-3.5 py-3">
+                  <p className="dx-eyebrow mb-1.5 flex items-center gap-1.5 text-brand-700">
+                    <Zap size={11} aria-hidden="true" />
+                    Written in Content
+                  </p>
+                  <p className="text-[0.8125rem] font-medium leading-tight text-ink">
+                    {entry.title}
+                  </p>
+                  <p className="mt-1 text-[0.75rem] leading-relaxed text-ink-muted">{entry.body}</p>
+                  <p className="mt-2 text-[0.75rem] text-ink-subtle">
+                    Version {entry.version} by {entry.owner}. Edit it in Content and this screen
+                    changes with it.
+                  </p>
+                </div>
+              )}
+
+              {!live && !bound && (
                 <>
                   <div>
                     <label htmlFor="canvas-headline" className="dx-eyebrow mb-1.5 block">
@@ -246,22 +268,24 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
                       className="dx-field resize-none"
                     />
                   </div>
-
-                  <div>
-                    <label htmlFor="canvas-footnote" className="dx-eyebrow mb-1.5 block">
-                      Small print
-                    </label>
-                    <input
-                      id="canvas-footnote"
-                      type="text"
-                      value={draft.footnote}
-                      maxLength={80}
-                      onChange={(event) => set('footnote', event.target.value)}
-                      placeholder="Ask reception if you are stuck."
-                      className="dx-field"
-                    />
-                  </div>
                 </>
+              )}
+
+              {!live && (
+                <div>
+                  <label htmlFor="canvas-footnote" className="dx-eyebrow mb-1.5 block">
+                    Small print
+                  </label>
+                  <input
+                    id="canvas-footnote"
+                    type="text"
+                    value={draft.footnote}
+                    maxLength={80}
+                    onChange={(event) => set('footnote', event.target.value)}
+                    placeholder="Ask reception if you are stuck."
+                    className="dx-field"
+                  />
+                </div>
               )}
 
               <div>

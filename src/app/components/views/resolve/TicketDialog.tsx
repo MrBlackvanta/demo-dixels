@@ -3,7 +3,7 @@ import { BookOpenCheck, Sparkles, X } from 'lucide-react';
 import { cn } from '../../ui/utils';
 import { Modal } from '../../shell/Modal';
 import { useCollection } from '../../../lib/store';
-import { spaces as spacesCol } from '../../../lib/data';
+import { entries as entriesCol, spaces as spacesCol } from '../../../lib/data';
 import type { Ticket, TicketPriority, TicketTeam } from '../../../lib/data';
 import {
   AGENTS,
@@ -14,6 +14,7 @@ import {
   TEAMS,
   TEAM_BLURB,
   TEAM_ICON,
+  articlesFrom,
   suggest,
 } from './support';
 
@@ -69,6 +70,7 @@ interface TicketDialogProps {
 
 export function TicketDialog({ mine, onClose, onCreate, onDeflect }: TicketDialogProps) {
   const allSpaces = useCollection(spacesCol);
+  const published = useCollection(entriesCol);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [errors, setErrors] = useState<Errors>({});
   const [reading, setReading] = useState<string | null>(null);
@@ -76,8 +78,8 @@ export function TicketDialog({ mine, onClose, onCreate, onDeflect }: TicketDialo
   const openMine = useMemo(() => mine.filter((row) => row.status !== 'resolved'), [mine]);
 
   const hints = useMemo(
-    () => suggest(`${draft.subject} ${draft.detail}`),
-    [draft.subject, draft.detail],
+    () => suggest(articlesFrom(published), `${draft.subject} ${draft.detail}`),
+    [published, draft.subject, draft.detail],
   );
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
