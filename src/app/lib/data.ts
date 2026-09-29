@@ -2,6 +2,8 @@ import { collection, scalar, seedOnce } from './store';
 import {
   BADGES,
   BOOKINGS,
+  CANVASES,
+  CHANNELS,
   CLOSURES,
   DELIVERIES,
   EVENTS,
@@ -14,6 +16,8 @@ import {
   REQUESTS,
   RULES,
   SCENES,
+  SCREENS,
+  SIGN_RULES,
   SPACES,
   TASKS,
   TICKETS,
@@ -485,6 +489,72 @@ export interface Closure extends Entity {
   ticketId?: string;
 }
 
+export type ScreenShape = 'landscape' | 'portrait';
+
+export type ScreenStatus = 'live' | 'resting' | 'dark';
+
+export interface Screen extends Entity {
+  name: string;
+  level: string;
+  shape: ScreenShape;
+  status: ScreenStatus;
+  channelId: string;
+  syncedAt: string;
+  brightness: number;
+  spaceId?: string;
+  placeId?: string;
+  fault?: string;
+}
+
+export type CanvasSource =
+  | 'notice'
+  | 'arrivals'
+  | 'events'
+  | 'menu'
+  | 'rooms'
+  | 'comfort'
+  | 'wayfinding';
+
+export type CanvasTone = 'brand' | 'ink' | 'green' | 'warm';
+
+export interface Canvas extends Entity {
+  title: string;
+  source: CanvasSource;
+  tone: CanvasTone;
+  seconds: number;
+  updatedBy: string;
+  headline?: string;
+  body?: string;
+  footnote?: string;
+}
+
+export interface Channel extends Entity {
+  name: string;
+  purpose: string;
+  canvasIds: string[];
+  days: string[];
+  from: string;
+  until: string;
+}
+
+export type SignTrigger =
+  | 'vip-arrives'
+  | 'event-opens'
+  | 'room-frees'
+  | 'route-shuts'
+  | 'air-turns';
+
+export interface SignRule extends Entity {
+  name: string;
+  trigger: SignTrigger;
+  canvasId: string;
+  screenIds: string[];
+  holdMinutes: number;
+  active: boolean;
+  firedAt?: string;
+  firedFor?: string;
+}
+
 export const meetings = collection<Meeting>('meetings');
 export const spaces = collection<Space>('spaces');
 export const bookings = collection<Booking>('bookings');
@@ -507,6 +577,10 @@ export const scenes = collection<Scene>('scenes');
 export const rules = collection<Rule>('rules');
 export const places = collection<Place>('places');
 export const closures = collection<Closure>('closures');
+export const screens = collection<Screen>('screens');
+export const canvases = collection<Canvas>('canvases');
+export const channels = collection<Channel>('channels');
+export const signRules = collection<SignRule>('signRules');
 
 export const persona = scalar<Persona>('persona', 'Employee');
 export const authed = scalar<boolean>('authed', false);
@@ -623,6 +697,22 @@ export function seedDemoData(): void {
     {
       col: closures as never,
       rows: CLOSURES.map(keyed),
+    },
+    {
+      col: screens as never,
+      rows: SCREENS.map(keyed),
+    },
+    {
+      col: canvases as never,
+      rows: CANVASES.map(keyed),
+    },
+    {
+      col: channels as never,
+      rows: CHANNELS.map(keyed),
+    },
+    {
+      col: signRules as never,
+      rows: SIGN_RULES.map(keyed),
     },
   ]);
 }

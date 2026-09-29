@@ -26,7 +26,11 @@ import type {
   Rsvp,
   Rule,
   RuleTrigger,
+  Canvas,
+  Channel,
   Scene,
+  Screen,
+  SignRule,
   SignState,
   Space,
   ServiceRequest,
@@ -261,7 +265,7 @@ const EVENT_SEED: Array<EventSeed & { id: string }> = [
     status: 'published',
     summary: 'Nine people joined this month. Come put faces to the names over something cold.',
     tags: ['Culture', 'Onboarding'],
-    going: ['Lina Haddad', 'Dina Hafez', 'Noura Sami', 'Sara Ahmed', 'Karim Fouad', 'Hana Youssef', 'Salma Gaber', 'Yousef Mansour', 'Maya Fahmy', 'Amira Shafik', 'Fadi Barakat', 'Khaled Nour'],
+    going: ['Lina Haddad', 'Dina Hafez', 'Noura Sami', 'Hana Youssef', 'Salma Gaber', 'Yousef Mansour', 'Maya Fahmy', 'Amira Shafik', 'Fadi Barakat', 'Khaled Nour'],
     waitlist: [],
   },
   {
@@ -528,11 +532,11 @@ export const EVENTS = EVENT_SEED.map((event) => ({
 }));
 
 export const VISITS: New<Visit>[] = [
-  { guest: 'Layla Nasser', company: 'Northwind', host: 'Sara Ahmed', date: day(0), time: '13:00', purpose: 'Quarterly review', status: 'pre-registered', email: 'layla.nasser@northwind.com', kind: 'VIP', spaceId: 'orchid', location: where('orchid'), parking: true, code: 'VF-4180' },
-  { guest: 'Omar Haddad', company: 'Vertex Labs', host: 'Sara Ahmed', date: day(0), time: '15:30', purpose: 'Partnership intro', status: 'invited', email: 'o.haddad@vertexlabs.io', kind: 'Guest', spaceId: 'studio-3', location: where('studio-3'), parking: false, code: 'VF-7723' },
+  { guest: 'Layla Nasser', company: 'Northwind', host: 'Sara Ahmed', date: day(0), time: '13:45', purpose: 'Quarterly review', status: 'pre-registered', email: 'layla.nasser@northwind.com', kind: 'VIP', spaceId: 'orchid', location: where('orchid'), parking: true, code: 'VF-4180' },
+  { guest: 'Omar Haddad', company: 'Vertex Labs', host: 'Khaled Nour', date: day(0), time: '15:30', purpose: 'Partnership intro', status: 'invited', email: 'o.haddad@vertexlabs.io', kind: 'Guest', spaceId: 'studio-3', location: where('studio-3'), parking: false, code: 'VF-7723' },
   { guest: 'Mei Chen', company: 'Aurora', host: 'Karim Fouad', date: day(0), time: '09:15', purpose: 'Onsite audit', status: 'checked-in', email: 'mei.chen@aurora.co', kind: 'Vendor', location: 'Level 4 lounge', parking: false, code: 'VF-2094', badge: '104', arrivedAt: minutesFromNow(-95) },
   { guest: 'Rami Barakat', company: 'Cobalt Systems', host: 'Nadia Salem', date: day(0), time: '10:30', purpose: 'Integration workshop', status: 'checked-in', email: 'r.barakat@cobaltsys.com', kind: 'Vendor', spaceId: 'cedar', location: where('cedar'), parking: true, code: 'VF-8812', badge: '102', arrivedAt: minutesFromNow(-240) },
-  { guest: 'Ingrid Sørensen', company: 'Nordic Retail', host: 'Hana Youssef', date: day(0), time: '11:00', purpose: 'Contract walkthrough', status: 'checked-in', email: 'ingrid@nordicretail.no', kind: 'VIP', spaceId: 'lotus', location: where('lotus'), parking: true, code: 'VF-6630', badge: 'VIP-01', arrivedAt: minutesFromNow(-180) },
+  { guest: 'Ingrid Sørensen', company: 'Nordic Retail', host: 'Hana Youssef', date: day(0), time: '11:00', purpose: 'Contract walkthrough', status: 'checked-in', email: 'ingrid@nordicretail.no', kind: 'VIP', spaceId: 'orchid', location: where('orchid'), parking: true, code: 'VF-6630', badge: 'VIP-01', arrivedAt: minutesFromNow(-180) },
   { guest: 'Tom Whitfield', company: 'Greenline Facilities', host: 'Yousef Mansour', date: day(0), time: '08:30', purpose: 'HVAC inspection', status: 'checked-out', email: 't.whitfield@greenline.co.uk', kind: 'Contractor', location: 'Level 6 plant room', parking: true, code: 'VF-1187', badge: '103', arrivedAt: minutesFromNow(-560), leftAt: minutesFromNow(-320) },
   { guest: 'Yasmine Toure', company: 'Atlas Capital', host: 'Tarek Aziz', date: day(0), time: '16:30', purpose: 'Funding checkpoint', status: 'pre-registered', email: 'y.toure@atlascapital.com', kind: 'VIP', spaceId: 'boardroom', location: where('boardroom'), parking: true, code: 'VF-9041' },
   { guest: 'Daniel Okafor', company: 'Helios Group', host: 'Sara Ahmed', date: day(1), time: '11:00', purpose: 'Design portfolio review', status: 'invited', email: 'd.okafor@helios.group', kind: 'Interview', spaceId: 'studio-3', location: where('studio-3'), parking: false, code: 'VF-5516' },
@@ -590,12 +594,12 @@ const DIARY: DiaryEntry[] = [
   { id: 'dy-design-standup-0', title: 'Design standup', kind: 'meeting', offset: 0, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
   { id: 'dy-design-sync-0', title: 'Design sync', kind: 'meeting', offset: 0, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '09:58', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
   { id: 'dy-sara-rana-0', title: 'Sara and Rana', kind: 'one-to-one', offset: 0, start: '11:05', end: '11:35', organizer: 'Sara Ahmed', crew: ['Rana Khalil'], spaceId: 'lotus', hold: 'confirmed', repeats: 'Every week', agenda: 'Weekly one to one.' },
-  { id: 'dy-ds-office-hours-0', title: 'Design system office hours', kind: 'meeting', offset: 0, start: '16:30', end: '17:15', organizer: 'Sara Ahmed', crew: ['Yara Sabry', 'Nadia Salem', 'Rana Khalil', 'Tamer Sobhy'], spaceId: 'olive', optional: ['Nadia Salem', 'Tamer Sobhy'], maybe: ['Nadia Salem'], unanswered: ['Tamer Sobhy'], repeats: 'Every week', agenda: 'Bring anything the library does not answer yet.' },
-  { id: 'dy-focus-0', title: 'Focus — form states', kind: 'focus', offset: 0, start: '14:00', end: '15:00', organizer: 'Sara Ahmed', crew: [], spaceId: 'pod-2a', taskId: 'tf-ds-crit', agenda: 'Heads down before the crit.' },
-  { id: 'dy-roof-walk-0', title: 'Roof Garden walkthrough', kind: 'meeting', offset: 0, start: '11:45', end: '12:30', organizer: 'Yousef Mansour', crew: ['Sara Ahmed', 'Adel Rashid', 'Farah Nabil'], spaceId: 'roof-garden', hold: 'confirmed', unanswered: ['Sara Ahmed'], agenda: 'Sign off the summer layout before the first booking uses it.' },
+  { id: 'dy-ds-office-hours-0', title: 'Design system office hours', kind: 'meeting', offset: 0, start: '16:45', end: '17:30', organizer: 'Sara Ahmed', crew: ['Yara Sabry', 'Nadia Salem', 'Rana Khalil', 'Tamer Sobhy'], spaceId: 'studio-4', optional: ['Nadia Salem', 'Tamer Sobhy'], maybe: ['Nadia Salem'], unanswered: ['Tamer Sobhy'], repeats: 'Every week', agenda: 'Bring anything the library does not answer yet.' },
+  { id: 'dy-focus-0', title: 'Focus — form states', kind: 'focus', offset: 0, start: '15:30', end: '16:30', organizer: 'Sara Ahmed', crew: [], spaceId: 'pod-2a', taskId: 'tf-ds-crit', agenda: 'Heads down before the crit.' },
+  { id: 'dy-roof-walk-0', title: 'Roof Garden walkthrough', kind: 'meeting', offset: 0, start: '11:45', end: '12:15', organizer: 'Yousef Mansour', crew: ['Sara Ahmed', 'Adel Rashid', 'Farah Nabil'], spaceId: 'roof-garden', hold: 'confirmed', unanswered: ['Sara Ahmed'], agenda: 'Sign off the summer layout before the first booking uses it.' },
   { id: 'dy-sprint-planning-0', title: 'Sprint planning', kind: 'meeting', offset: 0, start: '09:00', end: '10:30', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Sami Kamal', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', hold: 'checked-in', arrived: '09:01', maybe: ['Maya Fahmy'], unanswered: ['Sami Kamal'], agenda: 'Size the top of the backlog and commit to a sprint.' },
   { id: 'dy-pair-review-0', title: 'Pair review', kind: 'meeting', offset: 0, start: '11:00', end: '12:00', organizer: 'Nadia Salem', crew: ['Yara Sabry'], spaceId: 'jasmine', agenda: 'Walk the push notification branch together.' },
-  { id: 'dy-roadmap-0', title: 'Roadmap triage', kind: 'meeting', offset: 0, start: '14:30', end: '15:30', organizer: 'Maya Fahmy', crew: ['Karim Fouad', 'Sara Ahmed', 'Reem Othman'], spaceId: 'jasmine', maybe: ['Sara Ahmed'], unanswered: ['Reem Othman'], agenda: 'Everything asked for this quarter, ranked honestly.' },
+  { id: 'dy-roadmap-0', title: 'Roadmap triage', kind: 'meeting', offset: 0, start: '14:45', end: '15:45', organizer: 'Maya Fahmy', crew: ['Karim Fouad', 'Sara Ahmed', 'Reem Othman'], spaceId: 'jasmine', maybe: ['Sara Ahmed'], unanswered: ['Reem Othman'], agenda: 'Everything asked for this quarter, ranked honestly.' },
   { id: 'dy-standup-overflow-0', title: 'QA triage', kind: 'meeting', offset: 0, start: '09:30', end: '10:30', organizer: 'Tamer Sobhy', crew: ['Yara Sabry', 'Sami Kamal', 'Bassem Riad'], spaceId: 'olive', unanswered: ['Bassem Riad'], agenda: 'Open defects, oldest first.' },
   { id: 'dy-recruiter-0', title: 'Recruiter sync', kind: 'meeting', offset: 0, start: '13:00', end: '14:00', organizer: 'Dina Hafez', crew: ['Lina Haddad'], spaceId: 'olive', repeats: 'Every week', agenda: 'Pipeline for the two open platform roles.' },
   { id: 'dy-deep-work-0', title: 'Deep work', kind: 'focus', offset: 0, start: '10:00', end: '12:00', organizer: 'Omar Zaki', crew: [], spaceId: 'pod-2b', agenda: 'Occupancy forecast, no interruptions.' },
@@ -619,7 +623,7 @@ const DIARY: DiaryEntry[] = [
   { id: 'dy-icons-1', title: 'Focus — icon set', kind: 'focus', offset: 1, start: '12:15', end: '13:15', organizer: 'Sara Ahmed', crew: [], taskId: 'tf-ds-icons', agenda: 'Redraw the twelve that break at 16px.' },
   { id: 'dy-arch-note-1', title: 'Focus — architecture note', kind: 'focus', offset: 1, start: '11:00', end: '13:00', organizer: 'Karim Fouad', crew: [], spaceId: 'pod-2b', taskId: 'tf-plt-arch', agenda: 'Finish the multi-region write-up.' },
   { id: 'dy-cafe-sync-1', title: 'Café supplier sync', kind: 'meeting', offset: 1, start: '13:30', end: '14:15', organizer: 'Hassan Iqbal', crew: ['Waleed Tantawy', 'Yousef Mansour'], spaceId: 'olive', agenda: 'Coffee contract and the new lunch rotation.' },
-  { id: 'dy-mobile-sync-1', title: 'Mobile app sync', kind: 'meeting', offset: 1, start: '16:00', end: '17:00', organizer: 'Maya Fahmy', crew: ['Yara Sabry', 'Karim Fouad', 'Sara Ahmed', 'Tamer Sobhy'], spaceId: 'jasmine', no: ['Sara Ahmed'], maybe: ['Tamer Sobhy'], agenda: 'Push plumbing, offline mode, and the store review.' },
+  { id: 'dy-mobile-sync-1', title: 'Mobile app sync', kind: 'meeting', offset: 1, start: '16:00', end: '17:00', organizer: 'Maya Fahmy', crew: ['Yara Sabry', 'Karim Fouad', 'Sara Ahmed', 'Tamer Sobhy'], spaceId: 'cedar', no: ['Sara Ahmed'], maybe: ['Tamer Sobhy'], agenda: 'Push plumbing, offline mode, and the store review.' },
 
   { id: 'dy-design-standup-2', title: 'Design standup', kind: 'meeting', offset: 2, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
   { id: 'dy-sprint-planning-2', title: 'Sprint planning', kind: 'meeting', offset: 2, start: '10:00', end: '11:30', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Sami Kamal', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', no: ['Sami Kamal'], agenda: 'Size the top of the backlog and commit to a sprint.' },
@@ -3857,7 +3861,8 @@ const firstFreeSlot = (
     .filter(
       (meeting) =>
         meeting.date === date &&
-        (meeting.organizer === person || meeting.invitees.some((guest) => guest.name === person)),
+        (meeting.organizer === person ||
+          meeting.invitees.some((guest) => guest.name === person && guest.answer !== 'no')),
     )
     .map((meeting) => ({ from: toMinutes(meeting.start), to: toMinutes(meeting.end) }));
 
@@ -4261,5 +4266,80 @@ export const CLOSURES: Array<New<Closure> & { id: string }> = CLOSURE_SEED.map(
     ...closure,
     from: day(fromOffset),
     until: day(untilOffset),
+  }),
+);
+
+export const CANVASES: Array<New<Canvas> & { id: string }> = [
+  { id: 'cv-welcome', title: 'Welcome to Riyadh HQ', source: 'notice', tone: 'brand', seconds: 8, updatedBy: 'Amira Shafik', headline: 'Welcome to Riyadh HQ', body: 'Reception will badge you in. Guest wifi is DixelsGuest, no password before 19:00.', footnote: 'Level 1 · Main entrance' },
+  { id: 'cv-arrivals', title: 'Who is expected today', source: 'arrivals', tone: 'ink', seconds: 12, updatedBy: 'Lina Haddad' },
+  { id: 'cv-events', title: 'What is on today', source: 'events', tone: 'brand', seconds: 12, updatedBy: 'Mona Darwish' },
+  { id: 'cv-menu', title: 'Today at the café', source: 'menu', tone: 'green', seconds: 14, updatedBy: 'Hassan Iqbal' },
+  { id: 'cv-rooms', title: 'Rooms free near you', source: 'rooms', tone: 'ink', seconds: 10, updatedBy: 'Yousef Mansour' },
+  { id: 'cv-comfort', title: 'How this floor feels', source: 'comfort', tone: 'green', seconds: 8, updatedBy: 'Yousef Mansour' },
+  { id: 'cv-wayfinding', title: 'What is shut right now', source: 'wayfinding', tone: 'warm', seconds: 10, updatedBy: 'Adel Rashid' },
+  { id: 'cv-townhall', title: 'Q4 All-Hands', source: 'notice', tone: 'brand', seconds: 8, updatedBy: 'Noura Sami', headline: 'Q4 All-Hands', body: 'The Forum, Thursday at 14:00. Streamed to every floor if you cannot get down.', footnote: 'Bring your questions — half the hour is yours.' },
+  { id: 'cv-drill', title: 'Fire drill this week', source: 'notice', tone: 'warm', seconds: 8, updatedBy: 'Adel Rashid', headline: 'Fire drill on Thursday', body: 'Around 11:00. Leave by the nearest stair and wait at the far side of the visitor car park.', footnote: 'Lifts will be held at Level 1.' },
+  { id: 'cv-roof', title: 'The Roof Garden is open', source: 'notice', tone: 'green', seconds: 8, updatedBy: 'Mona Darwish', headline: 'The Roof Garden is open', body: 'Shaded seating on the lower terrace, and the upper deck once the sun drops.', footnote: 'Level 7 · book it in SpaceOS for anything over eight people.' },
+  { id: 'cv-vip', title: 'VIP welcome takeover', source: 'arrivals', tone: 'brand', seconds: 20, updatedBy: 'Lina Haddad', headline: 'Welcome', footnote: 'Reception has your badge ready.' },
+  { id: 'cv-quiet', title: 'Quiet floor reminder', source: 'notice', tone: 'ink', seconds: 6, updatedBy: 'Sara Ahmed', headline: 'Calls in the pods, please', body: 'Level 2 is the quiet floor. Pods 2-A and 2-B are soundproof and never booked for long.', footnote: 'Book one in SpaceOS, or just use it.' },
+];
+
+export const CHANNELS: Array<New<Channel> & { id: string }> = [
+  { id: 'chn-welcome', name: 'Front of house', purpose: 'What a visitor should see in the first ten seconds.', canvasIds: ['cv-welcome', 'cv-arrivals', 'cv-events', 'cv-wayfinding'], days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '06:30', until: '20:00' },
+  { id: 'chn-building', name: 'Building today', purpose: 'The floor-by-floor loop: what is on, what is shut, how it feels.', canvasIds: ['cv-events', 'cv-comfort', 'cv-wayfinding', 'cv-townhall', 'cv-rooms'], days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '07:00', until: '19:30' },
+  { id: 'chn-cafe', name: 'Café board', purpose: 'The menu, then whatever is worth walking down for.', canvasIds: ['cv-menu', 'cv-events', 'cv-roof'], days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '07:00', until: '16:00' },
+  { id: 'chn-rooms', name: 'Door panels', purpose: 'Who has this room, and where to go if it is taken.', canvasIds: ['cv-rooms', 'cv-comfort'], days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '07:00', until: '20:00' },
+  { id: 'chn-stage', name: 'Stage and lounge', purpose: 'Event screens — big type, one message at a time.', canvasIds: ['cv-events', 'cv-townhall', 'cv-roof'], days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '08:00', until: '21:00' },
+  { id: 'chn-quiet', name: 'Quiet floor', purpose: 'Level 2 only. Fewer messages, softer ones.', canvasIds: ['cv-quiet', 'cv-rooms', 'cv-comfort'], days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], from: '08:00', until: '19:00' },
+];
+
+interface ScreenSeed extends Omit<New<Screen>, 'syncedAt'> {
+  id: string;
+  syncedAgo: number;
+}
+
+const SCREEN_SEED: ScreenSeed[] = [
+  { id: 'sc-lobby-wall', name: 'Lobby video wall', level: 'Level 1', shape: 'landscape', status: 'live', channelId: 'chn-welcome', syncedAgo: 1, brightness: 90, placeId: 'pl-reception' },
+  { id: 'sc-arrivals', name: 'Reception arrivals board', level: 'Level 1', shape: 'portrait', status: 'live', channelId: 'chn-welcome', syncedAgo: 2, brightness: 85, placeId: 'pl-reception' },
+  { id: 'sc-atrium', name: 'Atrium noticeboard', level: 'Level 1', shape: 'landscape', status: 'live', channelId: 'chn-building', syncedAgo: 4, brightness: 80, placeId: 'pl-atrium', spaceId: 'atrium' },
+  { id: 'sc-cafe-1', name: 'Ground Café menu board', level: 'Level 1', shape: 'landscape', status: 'live', channelId: 'chn-cafe', syncedAgo: 3, brightness: 95, placeId: 'pl-cafe-1' },
+  { id: 'sc-lift-2', name: 'Level 2 lift lobby', level: 'Level 2', shape: 'portrait', status: 'live', channelId: 'chn-quiet', syncedAgo: 6, brightness: 70, placeId: 'pl-printer-2' },
+  { id: 'sc-studio-3', name: 'Studio 3 door panel', level: 'Level 2', shape: 'portrait', status: 'live', channelId: 'chn-rooms', syncedAgo: 2, brightness: 65, placeId: 'pl-studio-3', spaceId: 'studio-3' },
+  { id: 'sc-studio-4', name: 'Studio 4 door panel', level: 'Level 2', shape: 'portrait', status: 'live', channelId: 'chn-rooms', syncedAgo: 5, brightness: 65, placeId: 'pl-studio-4', spaceId: 'studio-4' },
+  { id: 'sc-lift-3', name: 'Level 3 lift lobby', level: 'Level 3', shape: 'portrait', status: 'live', channelId: 'chn-building', syncedAgo: 3, brightness: 75, placeId: 'pl-pantry-3' },
+  { id: 'sc-lab', name: 'Innovation Lab stage screen', level: 'Level 3', shape: 'landscape', status: 'live', channelId: 'chn-stage', syncedAgo: 1, brightness: 100, placeId: 'pl-lab', spaceId: 'lab' },
+  { id: 'sc-cedar', name: 'Cedar door panel', level: 'Level 3', shape: 'portrait', status: 'live', channelId: 'chn-rooms', syncedAgo: 4, brightness: 65, placeId: 'pl-cedar', spaceId: 'cedar' },
+  { id: 'sc-olive', name: 'Olive door panel', level: 'Level 3', shape: 'portrait', status: 'resting', channelId: 'chn-rooms', syncedAgo: 38, brightness: 40, placeId: 'pl-olive', spaceId: 'olive' },
+  { id: 'sc-desk-4', name: 'Level 4 desk neighbourhood board', level: 'Level 4', shape: 'landscape', status: 'live', channelId: 'chn-building', syncedAgo: 7, brightness: 80, placeId: 'pl-pantry-4' },
+  { id: 'sc-itbar', name: 'IT bar queue screen', level: 'Level 4', shape: 'portrait', status: 'live', channelId: 'chn-building', syncedAgo: 9, brightness: 75, placeId: 'pl-itbar' },
+  { id: 'sc-lift-5', name: 'Level 5 lift lobby', level: 'Level 5', shape: 'portrait', status: 'dark', channelId: 'chn-building', syncedAgo: 2760, brightness: 0, placeId: 'pl-pantry-5', fault: 'No answer since Sunday. Power to the wall socket was isolated for the printer move.' },
+  { id: 'sc-orchid', name: 'Orchid door panel', level: 'Level 5', shape: 'portrait', status: 'live', channelId: 'chn-rooms', syncedAgo: 3, brightness: 65, placeId: 'pl-orchid', spaceId: 'orchid' },
+  { id: 'sc-boardroom', name: 'Boardroom display', level: 'Level 6', shape: 'landscape', status: 'live', channelId: 'chn-rooms', syncedAgo: 5, brightness: 85, placeId: 'pl-boardroom', spaceId: 'boardroom' },
+  { id: 'sc-skyline', name: 'Skyline Lounge screen', level: 'Level 6', shape: 'landscape', status: 'live', channelId: 'chn-stage', syncedAgo: 2, brightness: 90, placeId: 'pl-skyline', spaceId: 'skyline' },
+  { id: 'sc-cafe-6', name: 'Sky Café board', level: 'Level 6', shape: 'landscape', status: 'resting', channelId: 'chn-cafe', syncedAgo: 95, brightness: 30, placeId: 'pl-cafe-6', fault: 'Sleeping while the café is shut for its deep clean.' },
+  { id: 'sc-roof', name: 'Roof Garden info post', level: 'Level 7', shape: 'portrait', status: 'live', channelId: 'chn-stage', syncedAgo: 6, brightness: 100, placeId: 'pl-roof-garden', spaceId: 'roof-garden' },
+];
+
+export const SCREENS: Array<New<Screen> & { id: string }> = SCREEN_SEED.map(
+  ({ syncedAgo, ...screen }) => ({ ...screen, syncedAt: minutesFromNow(-syncedAgo) }),
+);
+
+interface SignRuleSeed extends Omit<New<SignRule>, 'firedAt'> {
+  id: string;
+  firedAgo?: number;
+}
+
+const SIGN_RULE_SEED: SignRuleSeed[] = [
+  { id: 'sr-vip', name: 'Name a VIP on the lobby wall', trigger: 'vip-arrives', canvasId: 'cv-vip', screenIds: ['sc-lobby-wall', 'sc-arrivals'], holdMinutes: 10, active: true, firedAgo: 178, firedFor: 'Ingrid Sørensen · Nordic Retail' },
+  { id: 'sr-event', name: 'Put the next event on the floor screens', trigger: 'event-opens', canvasId: 'cv-events', screenIds: ['sc-atrium', 'sc-lift-3', 'sc-desk-4', 'sc-skyline'], holdMinutes: 15, active: true, firedAgo: 268, firedFor: 'Sunrise Yoga Flow · Roof Garden' },
+  { id: 'sr-room', name: 'Show a room the moment it frees up', trigger: 'room-frees', canvasId: 'cv-rooms', screenIds: ['sc-lift-2', 'sc-lift-3'], holdMinutes: 5, active: true, firedAgo: 63, firedFor: 'Jasmine · Level 3' },
+  { id: 'sr-closure', name: 'Warn the lift lobbies when a route shuts', trigger: 'route-shuts', canvasId: 'cv-wayfinding', screenIds: ['sc-lift-2', 'sc-lift-3', 'sc-lift-5'], holdMinutes: 60, active: true, firedAgo: 445, firedFor: 'South stairs — handrail replacement' },
+  { id: 'sr-air', name: 'Nudge a floor when the air turns', trigger: 'air-turns', canvasId: 'cv-comfort', screenIds: ['sc-atrium', 'sc-desk-4'], holdMinutes: 20, active: false },
+];
+
+export const SIGN_RULES: Array<New<SignRule> & { id: string }> = SIGN_RULE_SEED.map(
+  ({ firedAgo, ...rule }) => ({
+    ...rule,
+    firedAt: firedAgo === undefined ? undefined : minutesFromNow(-firedAgo),
   }),
 );

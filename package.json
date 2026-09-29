@@ -1,5 +1,5 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "dixels-demo",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -148,7 +148,5 @@
     "overrides": {
       "vite": "6.3.5"
     }
-  },
-  "readme": "ERROR: No README data found!",
-  "_id": "@figma/my-make-file@0.0.1"
+  }
 }
