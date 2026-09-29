@@ -1,21 +1,25 @@
 import { chainFor, costCentreOf, costOf, serviceById } from './catalogue';
-import { shiftDay, todayKey } from './format';
+import { shiftDay, toClock, toMinutes, todayKey } from './format';
 import { dueFrom } from './sla';
 import type { Entity } from './store';
 import type {
   Badge,
   Booking,
+  BookingStatus,
   Delivery,
   GatherEvent,
+  Invitee,
   Meeting,
+  MeetingKind,
   Notification,
   Order,
+  Origin,
   Post,
   Project,
+  Rsvp,
   Space,
   ServiceRequest,
   Task,
-  TaskOrigin,
   ThreadEntryKind,
   Ticket,
   Tribe,
@@ -24,7 +28,29 @@ import type {
 
 type New<T> = Omit<T, keyof Entity>;
 
-type Hold = Omit<New<Booking>, 'space' | 'level' | 'capacity'>;
+type Hold = Omit<New<Booking>, 'space' | 'level' | 'capacity'> & { id: string };
+
+interface DiaryEntry {
+  id: string;
+  title: string;
+  kind: MeetingKind;
+  offset: number;
+  start: string;
+  end: string;
+  organizer: string;
+  crew: string[];
+  agenda: string;
+  spaceId?: string;
+  hold?: BookingStatus;
+  arrived?: string;
+  no?: string[];
+  maybe?: string[];
+  unanswered?: string[];
+  optional?: string[];
+  repeats?: string;
+  taskId?: string;
+  notes?: string;
+}
 
 type EventSeed = Omit<New<GatherEvent>, 'location'> & { location?: string };
 
@@ -513,46 +539,117 @@ export const VISITS: New<Visit>[] = [
   { guest: 'Erik Lindqvist', company: 'Nordic Retail', host: 'Khaled Nour', date: day(4), time: '11:30', purpose: 'Expansion planning', status: 'invited', email: 'erik@nordicretail.no', kind: 'VIP', spaceId: 'boardroom', location: where('boardroom'), parking: true, code: 'VF-7745' },
 ];
 
-const DESK_AND_ROOM_HOLDS: Hold[] = [
-  { spaceId: 'studio-3', date: day(0), start: '10:00', end: '11:00', purpose: 'Design sync', status: 'checked-in', organizer: 'Sara Ahmed', attendees: 3, checkedInAt: at('09:58') },
-  { spaceId: 'cedar', date: day(0), start: '09:00', end: '10:30', purpose: 'Sprint planning', status: 'confirmed', organizer: 'Karim Fouad', attendees: 5 },
-  { spaceId: 'jasmine', date: day(0), start: '11:00', end: '12:00', purpose: 'Pair review', status: 'confirmed', organizer: 'Nadia Salem', attendees: 2 },
-  { spaceId: 'jasmine', date: day(0), start: '14:30', end: '15:30', purpose: 'Roadmap triage', status: 'confirmed', organizer: 'Maya Fahmy', attendees: 4 },
-  { spaceId: 'olive', date: day(0), start: '09:30', end: '10:30', purpose: 'Standup overflow', status: 'confirmed', organizer: 'Tamer Sobhy', attendees: 4 },
-  { spaceId: 'olive', date: day(0), start: '13:00', end: '14:00', purpose: 'Recruiter sync', status: 'confirmed', organizer: 'Dina Hafez', attendees: 2 },
-  { spaceId: 'pod-2a', date: day(0), start: '14:00', end: '15:00', purpose: 'Focus block', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
-  { spaceId: 'pod-2b', date: day(0), start: '10:00', end: '12:00', purpose: 'Deep work', status: 'confirmed', organizer: 'Omar Zaki', attendees: 1 },
-  { spaceId: 'desk-4-118', date: day(0), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
-  { spaceId: 'desk-4-122', date: day(0), start: '09:00', end: '17:00', purpose: 'Desk for the day', status: 'checked-in', organizer: 'Yara Sabry', attendees: 1, checkedInAt: at('08:51') },
-  { spaceId: 'maple', date: day(0), start: '11:30', end: '12:30', purpose: 'Platform review', status: 'confirmed', organizer: 'Ziad Morsi', attendees: 6 },
-  { spaceId: 'maple', date: day(0), start: '15:00', end: '16:00', purpose: 'Budget checkpoint', status: 'confirmed', organizer: 'Tarek Aziz', attendees: 5 },
-  { spaceId: 'studio-4', date: day(0), start: '09:00', end: '10:00', purpose: 'Content planning', status: 'confirmed', organizer: 'Farah Nabil', attendees: 4 },
-  { spaceId: 'studio-4', date: day(0), start: '13:30', end: '14:30', purpose: 'Campaign review', status: 'confirmed', organizer: 'Amira Shafik', attendees: 5 },
-  { spaceId: 'lotus', date: day(0), start: '16:00', end: '17:00', purpose: 'Vendor demo', status: 'confirmed', organizer: 'Hana Youssef', attendees: 5 },
-  { spaceId: 'orchid', date: day(0), start: '16:00', end: '17:00', purpose: 'Pipeline review', status: 'pending', organizer: 'Khaled Nour', attendees: 8 },
-  { spaceId: 'boardroom', date: day(0), start: '11:00', end: '13:00', purpose: 'Board lunch', status: 'pending', organizer: 'Noura Sami', attendees: 10 },
-  { spaceId: 'atrium', date: day(0), start: '09:00', end: '11:00', purpose: 'Onboarding week', status: 'pending', organizer: 'Lina Haddad', attendees: 25 },
-  { spaceId: 'studio-3', date: day(0), start: '15:30', end: '16:30', purpose: 'Partnership intro', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 4 },
-
-  { spaceId: 'studio-3', date: day(1), start: '11:00', end: '12:00', purpose: 'Portfolio review', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 3 },
-  { spaceId: 'cedar', date: day(1), start: '09:30', end: '11:00', purpose: 'Retro', status: 'confirmed', organizer: 'Karim Fouad', attendees: 6 },
-  { spaceId: 'desk-4-118', date: day(1), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
-  { spaceId: 'maple', date: day(1), start: '15:00', end: '16:30', purpose: 'Security review', status: 'confirmed', organizer: 'Adel Rashid', attendees: 7 },
-  { spaceId: 'lab', date: day(1), start: '09:00', end: '11:00', purpose: 'Research readout', status: 'confirmed', organizer: 'Reem Othman', attendees: 12 },
-  { spaceId: 'pod-2a', date: day(1), start: '13:00', end: '15:00', purpose: 'Writing block', status: 'confirmed', organizer: 'Farah Nabil', attendees: 1 },
-
-  { spaceId: 'cedar', date: day(2), start: '10:00', end: '11:30', purpose: 'Sprint planning', status: 'confirmed', organizer: 'Karim Fouad', attendees: 5 },
-  { spaceId: 'skyline', date: day(2), start: '09:00', end: '12:00', purpose: 'Leadership offsite', status: 'pending', organizer: 'Noura Sami', attendees: 18 },
-  { spaceId: 'desk-4-118', date: day(2), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
-  { spaceId: 'jasmine', date: day(2), start: '14:00', end: '15:00', purpose: 'One to one', status: 'confirmed', organizer: 'Lina Haddad', attendees: 2 },
-
-  { spaceId: 'studio-3', date: day(-1), start: '10:00', end: '11:00', purpose: 'Design sync', status: 'checked-in', organizer: 'Sara Ahmed', attendees: 3, checkedInAt: at('10:01', -1) },
-  { spaceId: 'cedar', date: day(-1), start: '14:00', end: '15:00', purpose: 'Incident review', status: 'checked-in', organizer: 'Sami Kamal', attendees: 6, checkedInAt: at('14:04', -1) },
-  { spaceId: 'pod-2b', date: day(-1), start: '09:00', end: '11:00', purpose: 'Deep work', status: 'checked-in', organizer: 'Omar Zaki', attendees: 1, checkedInAt: at('09:00', -1) },
+const DESK_HOLDS: Hold[] = [
+  { id: 'bk-desk-sara-0', spaceId: 'desk-4-118', date: day(0), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
+  { id: 'bk-desk-yara-0', spaceId: 'desk-4-122', date: day(0), start: '09:00', end: '17:00', purpose: 'Desk for the day', status: 'checked-in', organizer: 'Yara Sabry', attendees: 1, checkedInAt: at('08:51') },
+  { id: 'bk-desk-sara-1', spaceId: 'desk-4-118', date: day(1), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
+  { id: 'bk-desk-sara-2', spaceId: 'desk-4-118', date: day(2), start: '09:00', end: '17:00', purpose: 'Focus day', status: 'confirmed', organizer: 'Sara Ahmed', attendees: 1 },
+  { id: 'bk-desk-yara-2', spaceId: 'desk-4-122', date: day(2), start: '09:00', end: '17:00', purpose: 'Desk for the day', status: 'confirmed', organizer: 'Yara Sabry', attendees: 1 },
 ];
+
+const DIARY: DiaryEntry[] = [
+  { id: 'dy-design-sync-7', title: 'Design sync', kind: 'meeting', offset: -7, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '09:59', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
+  { id: 'dy-sprint-review-7', title: 'Sprint review', kind: 'meeting', offset: -7, start: '11:30', end: '12:30', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', hold: 'checked-in', arrived: '11:33', agenda: 'Demo what shipped, then cut what did not.' },
+  { id: 'dy-pipeline-7', title: 'Pipeline review', kind: 'meeting', offset: -7, start: '14:00', end: '15:00', organizer: 'Khaled Nour', crew: ['Fadi Barakat', 'Hana Youssef', 'Tarek Aziz'], spaceId: 'maple', agenda: 'Every deal over 200k, and what it is waiting on.' },
+  { id: 'dy-brand-checkin-7', title: 'Brand refresh check-in', kind: 'meeting', offset: -7, start: '15:30', end: '16:15', organizer: 'Rana Khalil', crew: ['Sara Ahmed', 'Amira Shafik', 'Farah Nabil'], spaceId: 'studio-4', agenda: 'Lockups, then the tone-of-voice draft.' },
+  { id: 'dy-sara-rana-7', title: 'Sara and Rana', kind: 'one-to-one', offset: -7, start: '13:00', end: '13:30', organizer: 'Sara Ahmed', crew: ['Rana Khalil'], repeats: 'Every week', agenda: 'Weekly one to one.' },
+
+  { id: 'dy-design-sync-6', title: 'Design sync', kind: 'meeting', offset: -6, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '10:02', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
+  { id: 'dy-token-workshop-6', title: 'Token naming workshop', kind: 'workshop', offset: -6, start: '13:30', end: '15:30', organizer: 'Sara Ahmed', crew: ['Yara Sabry', 'Rana Khalil', 'Reem Othman', 'Nadia Salem'], spaceId: 'lab', hold: 'checked-in', arrived: '13:28', agenda: 'Agree the naming scheme before anyone writes another component.' },
+  { id: 'dy-hiring-loop-6', title: 'Hiring loop debrief', kind: 'meeting', offset: -6, start: '16:00', end: '17:00', organizer: 'Dina Hafez', crew: ['Karim Fouad', 'Nadia Salem', 'Lina Haddad'], spaceId: 'jasmine', agenda: 'Two platform candidates, one decision each.' },
+  { id: 'dy-ops-standup-6', title: 'Workplace ops standup', kind: 'meeting', offset: -6, start: '09:00', end: '09:20', organizer: 'Yousef Mansour', crew: ['Adel Rashid', 'Hassan Iqbal', 'Bassem Riad'], repeats: 'Every weekday', agenda: 'Overnight tickets and anything blocking the floor.' },
+
+  { id: 'dy-design-sync-5', title: 'Design sync', kind: 'meeting', offset: -5, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '10:00', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
+  { id: 'dy-research-readout-5', title: 'Booking flow research readout', kind: 'meeting', offset: -5, start: '11:30', end: '12:30', organizer: 'Reem Othman', crew: ['Sara Ahmed', 'Maya Fahmy', 'Yara Sabry', 'Karim Fouad'], spaceId: 'cedar', agenda: 'Eight sessions, four themes, one uncomfortable finding.' },
+  { id: 'dy-budget-5', title: 'Q4 budget pass', kind: 'meeting', offset: -5, start: '14:00', end: '15:30', organizer: 'Tarek Aziz', crew: ['Noura Sami', 'Waleed Tantawy', 'Karim Fouad'], spaceId: 'maple', agenda: 'Headcount, tooling, and the fit-out overspend.' },
+  { id: 'dy-content-cal-5', title: 'Content calendar', kind: 'meeting', offset: -5, start: '09:30', end: '10:15', organizer: 'Farah Nabil', crew: ['Amira Shafik', 'Salma Gaber'], spaceId: 'olive', repeats: 'Every week', agenda: 'What goes out next week and who writes it.' },
+
+  { id: 'dy-design-sync-2', title: 'Design sync', kind: 'meeting', offset: -2, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '10:03', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
+  { id: 'dy-platform-sync-2', title: 'Platform sync', kind: 'meeting', offset: -2, start: '11:30', end: '12:30', organizer: 'Ziad Morsi', crew: ['Karim Fouad', 'Sami Kamal', 'Nadia Salem'], spaceId: 'maple', agenda: 'Multi-region, and whether the migration window still holds.' },
+  { id: 'dy-wellness-plan-2', title: 'Wellness week planning', kind: 'meeting', offset: -2, start: '14:00', end: '15:00', organizer: 'Mona Darwish', crew: ['Lina Haddad', 'Salma Gaber', 'Hassan Iqbal'], spaceId: 'jasmine', agenda: 'Five days, five sessions, one budget.' },
+
+  { id: 'dy-design-sync-1', title: 'Design sync', kind: 'meeting', offset: -1, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '10:01', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
+  { id: 'dy-incident-1', title: 'Incident review — login latency', kind: 'meeting', offset: -1, start: '14:00', end: '15:00', organizer: 'Sami Kamal', crew: ['Karim Fouad', 'Nadia Salem', 'Ziad Morsi', 'Bassem Riad', 'Tamer Sobhy'], spaceId: 'cedar', hold: 'checked-in', arrived: '14:04', agenda: 'Timeline, root cause, and the two actions that stop it happening again.' },
+  { id: 'dy-deep-work-1', title: 'Deep work', kind: 'focus', offset: -1, start: '09:00', end: '11:00', organizer: 'Omar Zaki', crew: [], spaceId: 'pod-2b', hold: 'checked-in', arrived: '09:00', agenda: 'Model retraining, no interruptions.' },
+  { id: 'dy-buttons-1', title: 'Focus — button set', kind: 'focus', offset: -1, start: '11:30', end: '13:00', organizer: 'Sara Ahmed', crew: [], spaceId: 'pod-2a', taskId: 'tf-ds-buttons', agenda: 'Heads down on the token migration.' },
+  { id: 'dy-legal-review-1', title: 'Vendor contract review', kind: 'meeting', offset: -1, start: '11:00', end: '12:00', organizer: 'Laila Mostafa', crew: ['Waleed Tantawy', 'Tarek Aziz'], spaceId: 'olive', agenda: 'Three renewals, two red-lines.' },
+  { id: 'dy-sales-standup-1', title: 'Commercial standup', kind: 'meeting', offset: -1, start: '09:00', end: '09:20', organizer: 'Khaled Nour', crew: ['Fadi Barakat', 'Hana Youssef'], repeats: 'Every weekday', agenda: 'Yesterday, today, blockers.' },
+
+  { id: 'dy-design-standup-0', title: 'Design standup', kind: 'meeting', offset: 0, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
+  { id: 'dy-design-sync-0', title: 'Design sync', kind: 'meeting', offset: 0, start: '10:00', end: '11:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman'], spaceId: 'studio-3', hold: 'checked-in', arrived: '09:58', repeats: 'Every weekday', agenda: 'What moved, what is stuck, what needs a decision today.' },
+  { id: 'dy-sara-rana-0', title: 'Sara and Rana', kind: 'one-to-one', offset: 0, start: '11:00', end: '11:30', organizer: 'Sara Ahmed', crew: ['Rana Khalil'], repeats: 'Every week', agenda: 'Weekly one to one.' },
+  { id: 'dy-ds-office-hours-0', title: 'Design system office hours', kind: 'meeting', offset: 0, start: '16:30', end: '17:15', organizer: 'Sara Ahmed', crew: ['Yara Sabry', 'Nadia Salem', 'Rana Khalil', 'Tamer Sobhy'], spaceId: 'olive', optional: ['Nadia Salem', 'Tamer Sobhy'], unanswered: ['Tamer Sobhy'], repeats: 'Every week', agenda: 'Bring anything the library does not answer yet.' },
+  { id: 'dy-focus-0', title: 'Focus — form states', kind: 'focus', offset: 0, start: '14:00', end: '15:00', organizer: 'Sara Ahmed', crew: [], spaceId: 'pod-2a', taskId: 'tf-ds-crit', agenda: 'Heads down before the crit.' },
+  { id: 'dy-sprint-planning-0', title: 'Sprint planning', kind: 'meeting', offset: 0, start: '09:00', end: '10:30', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Sami Kamal', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', hold: 'checked-in', arrived: '09:01', agenda: 'Size the top of the backlog and commit to a sprint.' },
+  { id: 'dy-pair-review-0', title: 'Pair review', kind: 'meeting', offset: 0, start: '11:00', end: '12:00', organizer: 'Nadia Salem', crew: ['Yara Sabry'], spaceId: 'jasmine', agenda: 'Walk the push notification branch together.' },
+  { id: 'dy-roadmap-0', title: 'Roadmap triage', kind: 'meeting', offset: 0, start: '14:30', end: '15:30', organizer: 'Maya Fahmy', crew: ['Karim Fouad', 'Sara Ahmed', 'Reem Othman'], spaceId: 'jasmine', maybe: ['Sara Ahmed'], agenda: 'Everything asked for this quarter, ranked honestly.' },
+  { id: 'dy-standup-overflow-0', title: 'QA triage', kind: 'meeting', offset: 0, start: '09:30', end: '10:30', organizer: 'Tamer Sobhy', crew: ['Yara Sabry', 'Sami Kamal', 'Bassem Riad'], spaceId: 'olive', agenda: 'Open defects, oldest first.' },
+  { id: 'dy-recruiter-0', title: 'Recruiter sync', kind: 'meeting', offset: 0, start: '13:00', end: '14:00', organizer: 'Dina Hafez', crew: ['Lina Haddad'], spaceId: 'olive', repeats: 'Every week', agenda: 'Pipeline for the two open platform roles.' },
+  { id: 'dy-deep-work-0', title: 'Deep work', kind: 'focus', offset: 0, start: '10:00', end: '12:00', organizer: 'Omar Zaki', crew: [], spaceId: 'pod-2b', agenda: 'Occupancy forecast, no interruptions.' },
+  { id: 'dy-platform-review-0', title: 'Platform review', kind: 'meeting', offset: 0, start: '11:30', end: '12:30', organizer: 'Ziad Morsi', crew: ['Karim Fouad', 'Sami Kamal', 'Nadia Salem', 'Bassem Riad', 'Tamer Sobhy'], spaceId: 'maple', agenda: 'Architecture note, then the rotation schedule.' },
+  { id: 'dy-budget-0', title: 'Budget checkpoint', kind: 'meeting', offset: 0, start: '15:00', end: '16:00', organizer: 'Tarek Aziz', crew: ['Noura Sami', 'Waleed Tantawy', 'Karim Fouad', 'Lina Haddad'], spaceId: 'maple', agenda: 'Where we are against plan with a quarter to go.' },
+  { id: 'dy-content-planning-0', title: 'Content planning', kind: 'meeting', offset: 0, start: '09:00', end: '10:00', organizer: 'Farah Nabil', crew: ['Amira Shafik', 'Salma Gaber', 'Rana Khalil'], spaceId: 'studio-4', agenda: 'Next month, mapped to the launch.' },
+  { id: 'dy-campaign-0', title: 'Campaign review', kind: 'meeting', offset: 0, start: '13:30', end: '14:30', organizer: 'Amira Shafik', crew: ['Farah Nabil', 'Khaled Nour', 'Salma Gaber', 'Rana Khalil'], spaceId: 'studio-4', agenda: 'Creative, spend, and the two channels underperforming.' },
+  { id: 'dy-vendor-demo-0', title: 'Vendor demo — Meridian', kind: 'meeting', offset: 0, start: '16:00', end: '17:00', organizer: 'Hana Youssef', crew: ['Waleed Tantawy', 'Laila Mostafa', 'Bassem Riad', 'Tarek Aziz'], spaceId: 'lotus', agenda: 'Their platform, our questions, no commitments today.' },
+  { id: 'dy-pipeline-0', title: 'Pipeline review', kind: 'meeting', offset: 0, start: '16:00', end: '17:00', organizer: 'Khaled Nour', crew: ['Fadi Barakat', 'Hana Youssef', 'Tarek Aziz', 'Amira Shafik'], spaceId: 'orchid', hold: 'pending', agenda: 'Commit, best case, and what slipped.' },
+  { id: 'dy-board-lunch-0', title: 'Board lunch', kind: 'meeting', offset: 0, start: '11:00', end: '13:00', organizer: 'Noura Sami', crew: ['Tarek Aziz', 'Karim Fouad', 'Laila Mostafa', 'Khaled Nour'], spaceId: 'boardroom', hold: 'pending', agenda: 'Informal. The deck is for afterwards.' },
+  { id: 'dy-onboarding-0', title: 'Onboarding week — day one', kind: 'workshop', offset: 0, start: '09:00', end: '11:00', organizer: 'Lina Haddad', crew: ['Dina Hafez', 'Bassem Riad', 'Adel Rashid', 'Mona Darwish'], spaceId: 'atrium', hold: 'pending', agenda: 'Welcome, systems, security, and the floor tour.' },
+  { id: 'dy-ops-standup-0', title: 'Workplace ops standup', kind: 'meeting', offset: 0, start: '08:30', end: '08:50', organizer: 'Yousef Mansour', crew: ['Adel Rashid', 'Hassan Iqbal', 'Bassem Riad'], repeats: 'Every weekday', agenda: 'Overnight tickets and anything blocking the floor.' },
+  { id: 'dy-legal-sync-0', title: 'Legal clinic', kind: 'meeting', offset: 0, start: '15:00', end: '15:45', organizer: 'Laila Mostafa', crew: ['Waleed Tantawy', 'Hana Youssef'], optional: ['Hana Youssef'], agenda: 'Bring any contract that needs an answer this week.' },
+  { id: 'dy-data-review-0', title: 'Occupancy data review', kind: 'meeting', offset: 0, start: '13:00', end: '14:00', organizer: 'Omar Zaki', crew: ['Yousef Mansour', 'Maya Fahmy', 'Noura Sami'], unanswered: ['Noura Sami'], agenda: 'Where the floor is actually full, and where it is not.' },
+
+  { id: 'dy-design-standup-1', title: 'Design standup', kind: 'meeting', offset: 1, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
+  { id: 'dy-retro-1', title: 'Sprint retro', kind: 'meeting', offset: 1, start: '09:30', end: '11:00', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Sami Kamal', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', agenda: 'What to keep, what to drop, what to try.' },
+  { id: 'dy-security-review-1', title: 'Security review', kind: 'meeting', offset: 1, start: '15:00', end: '16:30', organizer: 'Adel Rashid', crew: ['Bassem Riad', 'Sami Kamal', 'Ziad Morsi', 'Laila Mostafa', 'Karim Fouad'], spaceId: 'maple', agenda: 'SSO rollout, badge policy, and the access audit.' },
+  { id: 'dy-research-1', title: 'Research readout', kind: 'meeting', offset: 1, start: '09:00', end: '11:00', organizer: 'Reem Othman', crew: ['Sara Ahmed', 'Maya Fahmy', 'Rana Khalil', 'Yara Sabry', 'Karim Fouad'], spaceId: 'lab', maybe: ['Karim Fouad'], agenda: 'Twelve sessions on the new joiner flow.' },
+  { id: 'dy-writing-1', title: 'Writing block', kind: 'focus', offset: 1, start: '13:00', end: '15:00', organizer: 'Farah Nabil', crew: [], spaceId: 'pod-2a', agenda: 'Launch copy, first pass.' },
+  { id: 'dy-icons-1', title: 'Focus — icon set', kind: 'focus', offset: 1, start: '12:15', end: '13:15', organizer: 'Sara Ahmed', crew: [], taskId: 'tf-ds-icons', agenda: 'Redraw the twelve that break at 16px.' },
+  { id: 'dy-arch-note-1', title: 'Focus — architecture note', kind: 'focus', offset: 1, start: '11:00', end: '13:00', organizer: 'Karim Fouad', crew: [], spaceId: 'pod-2b', taskId: 'tf-plt-arch', agenda: 'Finish the multi-region write-up.' },
+  { id: 'dy-cafe-sync-1', title: 'Café supplier sync', kind: 'meeting', offset: 1, start: '13:30', end: '14:15', organizer: 'Hassan Iqbal', crew: ['Waleed Tantawy', 'Yousef Mansour'], spaceId: 'olive', agenda: 'Coffee contract and the new lunch rotation.' },
+  { id: 'dy-mobile-sync-1', title: 'Mobile app sync', kind: 'meeting', offset: 1, start: '16:00', end: '17:00', organizer: 'Maya Fahmy', crew: ['Yara Sabry', 'Karim Fouad', 'Sara Ahmed', 'Tamer Sobhy'], spaceId: 'jasmine', agenda: 'Push plumbing, offline mode, and the store review.' },
+
+  { id: 'dy-design-standup-2', title: 'Design standup', kind: 'meeting', offset: 2, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
+  { id: 'dy-sprint-planning-2', title: 'Sprint planning', kind: 'meeting', offset: 2, start: '10:00', end: '11:30', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Sami Kamal', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', agenda: 'Size the top of the backlog and commit to a sprint.' },
+  { id: 'dy-offsite-2', title: 'Leadership offsite', kind: 'workshop', offset: 2, start: '09:00', end: '12:00', organizer: 'Noura Sami', crew: ['Karim Fouad', 'Tarek Aziz', 'Lina Haddad', 'Khaled Nour', 'Laila Mostafa', 'Maya Fahmy'], spaceId: 'skyline', hold: 'pending', agenda: 'Q4 plan, then the reorg question nobody wants to open.' },
+  { id: 'dy-one-to-one-2', title: 'Lina and Sara', kind: 'one-to-one', offset: 2, start: '14:00', end: '15:00', organizer: 'Lina Haddad', crew: ['Sara Ahmed'], spaceId: 'jasmine', agenda: 'Career conversation, second of three.' },
+  { id: 'dy-crit-2', title: 'Design crit — form states', kind: 'meeting', offset: 2, start: '11:00', end: '12:00', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry', 'Maya Fahmy'], spaceId: 'studio-3', agenda: 'Field, label, error. Bring the edge cases.' },
+  { id: 'dy-summit-prep-2', title: 'Summit talk prep', kind: 'meeting', offset: 2, start: '16:30', end: '17:15', organizer: 'Amira Shafik', crew: ['Sara Ahmed', 'Karim Fouad', 'Salma Gaber'], unanswered: ['Karim Fouad'], agenda: 'Confirm the three speakers and their slots.' },
+
+  { id: 'dy-design-standup-3', title: 'Design standup', kind: 'meeting', offset: 3, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
+  { id: 'dy-ds-review-3', title: 'Design system review', kind: 'meeting', offset: 3, start: '13:30', end: '14:30', organizer: 'Sara Ahmed', crew: ['Yara Sabry', 'Rana Khalil', 'Nadia Salem'], spaceId: 'studio-3', agenda: 'Everything shipped this sprint, against the tokens.' },
+  { id: 'dy-migration-window-3', title: 'Migration window walkthrough', kind: 'meeting', offset: 3, start: '14:00', end: '15:00', organizer: 'Sami Kamal', crew: ['Ziad Morsi', 'Karim Fouad', 'Bassem Riad'], spaceId: 'cedar', agenda: 'Runbook, rollback, and who is awake for it.' },
+  { id: 'dy-comms-3', title: 'Launch comms', kind: 'meeting', offset: 3, start: '10:00', end: '11:00', organizer: 'Farah Nabil', crew: ['Amira Shafik', 'Salma Gaber', 'Noura Sami'], spaceId: 'olive', agenda: 'What we say, when, and to whom.' },
+
+  { id: 'dy-design-standup-5', title: 'Design standup', kind: 'meeting', offset: 5, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
+  { id: 'dy-sprint-review-5', title: 'Sprint review', kind: 'meeting', offset: 5, start: '11:00', end: '12:00', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Tamer Sobhy', 'Maya Fahmy', 'Sara Ahmed'], spaceId: 'cedar', agenda: 'Demo what shipped, then cut what did not.' },
+  { id: 'dy-quarterly-people-5', title: 'Quarterly people review', kind: 'meeting', offset: 5, start: '14:00', end: '16:00', organizer: 'Lina Haddad', crew: ['Noura Sami', 'Karim Fouad', 'Sara Ahmed', 'Dina Hafez'], spaceId: 'boardroom', hold: 'pending', agenda: 'Every team, every open role, every risk.' },
+  { id: 'dy-vendor-shortlist-5', title: 'Vendor shortlist', kind: 'meeting', offset: 5, start: '10:00', end: '11:00', organizer: 'Waleed Tantawy', crew: ['Laila Mostafa', 'Tarek Aziz', 'Hana Youssef'], spaceId: 'maple', agenda: 'Three left. Pick two to take forward.' },
+
+  { id: 'dy-design-standup-6', title: 'Design standup', kind: 'meeting', offset: 6, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
+  { id: 'dy-roadmap-6', title: 'Roadmap triage', kind: 'meeting', offset: 6, start: '14:30', end: '15:30', organizer: 'Maya Fahmy', crew: ['Karim Fouad', 'Sara Ahmed', 'Reem Othman'], spaceId: 'jasmine', repeats: 'Every two weeks', agenda: 'Everything asked for this quarter, ranked honestly.' },
+  { id: 'dy-onboarding-retro-6', title: 'Onboarding retro', kind: 'meeting', offset: 6, start: '11:00', end: '12:00', organizer: 'Lina Haddad', crew: ['Dina Hafez', 'Sara Ahmed', 'Bassem Riad'], spaceId: 'olive', agenda: 'What the last cohort said, and what we change.' },
+
+  { id: 'dy-design-standup-7', title: 'Design standup', kind: 'meeting', offset: 7, start: '09:00', end: '09:15', organizer: 'Sara Ahmed', crew: ['Rana Khalil', 'Reem Othman', 'Yara Sabry'], repeats: 'Every weekday', agenda: 'Fifteen minutes, standing up, no laptops.' },
+  { id: 'dy-sprint-planning-7', title: 'Sprint planning', kind: 'meeting', offset: 7, start: '13:00', end: '14:30', organizer: 'Karim Fouad', crew: ['Nadia Salem', 'Yara Sabry', 'Sami Kamal', 'Tamer Sobhy', 'Maya Fahmy'], spaceId: 'cedar', agenda: 'Size the top of the backlog and commit to a sprint.' },
+  { id: 'dy-brand-signoff-7', title: 'Brand refresh sign-off', kind: 'meeting', offset: 7, start: '15:00', end: '16:00', organizer: 'Rana Khalil', crew: ['Sara Ahmed', 'Amira Shafik', 'Noura Sami', 'Farah Nabil'], spaceId: 'lotus', agenda: 'Final lockups. This is the one that gets signed.' },
+];
+
+const diaryHolds: Hold[] = DIARY.filter((entry) => entry.spaceId !== undefined).map((entry) => ({
+  id: `bk-${entry.id}`,
+  spaceId: entry.spaceId,
+  date: day(entry.offset),
+  start: entry.start,
+  end: entry.end,
+  purpose: entry.title,
+  status: entry.hold ?? 'confirmed',
+  organizer: entry.organizer,
+  attendees: entry.crew.length + 1,
+  checkedInAt: entry.arrived === undefined ? undefined : at(entry.arrived, entry.offset),
+}));
 
 const eventHolds: Hold[] = EVENTS.filter((event) => event.spaceId && event.status === 'published').map(
   (event) => ({
+    id: `bk-${event.id}`,
     spaceId: event.spaceId,
     date: event.date,
     start: event.start,
@@ -567,6 +664,7 @@ const eventHolds: Hold[] = EVENTS.filter((event) => event.spaceId && event.statu
 
 const visitHolds: Hold[] = VISITS.filter((visit) => visit.spaceId && visit.status !== 'cancelled').map(
   (visit) => ({
+    id: `bk-visit-${visit.code}`,
     spaceId: visit.spaceId,
     date: visit.date,
     start: visit.time,
@@ -578,8 +676,9 @@ const visitHolds: Hold[] = VISITS.filter((visit) => visit.spaceId && visit.statu
   }),
 );
 
-export const BOOKINGS: New<Booking>[] = [
-  ...DESK_AND_ROOM_HOLDS,
+export const BOOKINGS: Array<New<Booking> & { id: string }> = [
+  ...DESK_HOLDS,
+  ...diaryHolds,
   ...eventHolds,
   ...visitHolds,
 ].map((hold) => {
@@ -591,14 +690,6 @@ export const BOOKINGS: New<Booking>[] = [
     capacity: space?.capacity ?? 8,
   };
 });
-
-export const MEETINGS: New<Meeting>[] = [
-  { title: 'Design sync', space: 'Studio 3', level: 'Level 2', start: minutesFromNow(25), end: minutesFromNow(85), attendees: ['SA', 'RK', 'RO'], status: 'confirmed' },
-  { title: 'Lunch & Learn: Design Systems', space: 'Innovation Lab', level: 'Level 3', start: minutesFromNow(85), end: minutesFromNow(145), attendees: ['SA', 'RK', 'YS', 'MF'], status: 'confirmed' },
-  { title: 'Client visit — Northwind', space: 'Orchid', level: 'Level 5', start: minutesFromNow(150), end: minutesFromNow(210), attendees: ['SA', 'HY'], status: 'confirmed' },
-  { title: 'Partnership intro — Vertex Labs', space: 'Studio 3', level: 'Level 2', start: minutesFromNow(215), end: minutesFromNow(275), attendees: ['SA', 'HY'], status: 'confirmed' },
-  { title: 'A little focus time', space: 'Pod 2-A', level: 'Level 2', start: minutesFromNow(280), end: minutesFromNow(340), attendees: ['SA'], status: 'tentative' },
-];
 
 export const BADGES: New<Badge>[] = [
   { number: '101' },
@@ -3584,7 +3675,7 @@ const TICKET_REF = new Map(TICKETS.map((ticket) => [ticket.id, ticket.ref]));
 const REQUEST_REF = new Map(REQUESTS.map((request) => [request.id, request.ref]));
 const EVENT_TITLE = new Map(EVENTS.map((event) => [event.id, event.title]));
 
-const originOf = (ticket?: string, request?: string, event?: string): TaskOrigin | undefined => {
+const originOf = (ticket?: string, request?: string, event?: string): Origin | undefined => {
   if (ticket) return { module: 'Resolve', ref: TICKET_REF.get(ticket) ?? ticket };
   if (request) return { module: 'OmniServe', ref: REQUEST_REF.get(request) ?? request };
   if (event) return { module: 'Gather', ref: EVENT_TITLE.get(event) ?? event };
@@ -3643,3 +3734,146 @@ export const TASKS: Array<New<Task> & { id: string }> = [...TASK_SEED]
       };
     },
   );
+
+const TASK_REF = new Map(TASKS.map((task) => [task.id, task.ref]));
+const TASK_TITLE = new Map(TASKS.map((task) => [task.id, task.title]));
+
+const answerFor = (entry: DiaryEntry, name: string): Rsvp => {
+  if (entry.no?.includes(name)) return 'no';
+  if (entry.maybe?.includes(name)) return 'maybe';
+  if (entry.unanswered?.includes(name)) return 'pending';
+  return 'yes';
+};
+
+const guestList = (entry: DiaryEntry): Invitee[] =>
+  entry.crew.map((name) => ({
+    name,
+    answer: answerFor(entry, name),
+    optional: entry.optional?.includes(name) ?? false,
+  }));
+
+const fromTask = (taskId?: string): Origin | undefined =>
+  taskId === undefined ? undefined : { module: 'TaskFlow', ref: TASK_REF.get(taskId) ?? taskId };
+
+const diaryMeetings: Array<New<Meeting> & { id: string }> = DIARY.map((entry) => ({
+  id: entry.id,
+  title: entry.title,
+  agenda: entry.agenda,
+  kind: entry.kind,
+  date: day(entry.offset),
+  start: entry.start,
+  end: entry.end,
+  organizer: entry.organizer,
+  invitees: guestList(entry),
+  status: 'confirmed' as const,
+  online: entry.spaceId === undefined,
+  spaceId: entry.spaceId,
+  bookingId: entry.spaceId === undefined ? undefined : `bk-${entry.id}`,
+  taskId: entry.taskId,
+  origin: fromTask(entry.taskId),
+  repeats: entry.repeats,
+  notes: entry.notes,
+}));
+
+const eventMeetings: Array<New<Meeting> & { id: string }> = EVENTS.filter(
+  (event) => event.status === 'published',
+).map((event) => ({
+  id: `mt-${event.id}`,
+  title: event.title,
+  agenda: event.summary,
+  kind: 'gathering' as const,
+  date: event.date,
+  start: event.start,
+  end: event.end,
+  organizer: event.host,
+  invitees: event.going
+    .filter((name) => name !== event.host)
+    .map((name) => ({ name, answer: 'yes' as const, optional: !event.required })),
+  status: 'confirmed' as const,
+  online: event.mode === 'Virtual',
+  place: event.spaceId === undefined ? event.location : undefined,
+  spaceId: event.spaceId,
+  bookingId: event.spaceId === undefined ? undefined : `bk-${event.id}`,
+  eventId: event.id,
+  origin: { module: 'Gather', ref: event.title },
+}));
+
+const visitMeetings: Array<New<Meeting> & { id: string }> = VISITS.filter(
+  (visit) => visit.status !== 'cancelled',
+).map((visit) => ({
+  id: `mt-visit-${visit.code}`,
+  title: `${visit.purpose} — ${visit.company}`,
+  agenda: `${visit.guest} is visiting from ${visit.company}.`,
+  kind: visit.kind === 'Interview' ? ('interview' as const) : ('meeting' as const),
+  date: visit.date,
+  start: visit.time,
+  end: toClock(toMinutes(visit.time) + 60),
+  organizer: visit.host,
+  invitees: [],
+  status: 'confirmed' as const,
+  online: false,
+  place: visit.spaceId === undefined ? visit.location : undefined,
+  spaceId: visit.spaceId,
+  bookingId: visit.spaceId === undefined ? undefined : `bk-visit-${visit.code}`,
+  origin: { module: 'VisitFlow', ref: visit.code ?? visit.guest },
+  notes: `${visit.guest} · ${visit.company}`,
+}));
+
+const WORKING = { from: 9 * 60, to: 17 * 60 };
+
+const firstFreeSlot = (
+  taken: Array<New<Meeting>>,
+  person: string,
+  date: string,
+  length: number,
+): string | undefined => {
+  const busy = taken
+    .filter(
+      (meeting) =>
+        meeting.date === date &&
+        (meeting.organizer === person || meeting.invitees.some((guest) => guest.name === person)),
+    )
+    .map((meeting) => ({ from: toMinutes(meeting.start), to: toMinutes(meeting.end) }));
+
+  for (let minute = WORKING.from; minute + length <= WORKING.to; minute += 30) {
+    const clear = busy.every((block) => minute >= block.to || minute + length <= block.from);
+    if (clear) return toClock(minute);
+  }
+  return undefined;
+};
+
+const focusMeetings: Array<New<Meeting> & { id: string }> = TASKS.filter(
+  (task) => task.state === 'doing' && task.estimate - task.logged >= 60,
+).reduce<Array<New<Meeting> & { id: string }>>((blocks, task, index) => {
+  const date = day(1 + (index % 4));
+  const length = Math.min(120, Math.max(60, task.estimate - task.logged));
+  const start = firstFreeSlot([...diaryMeetings, ...eventMeetings, ...visitMeetings, ...blocks], task.owner, date, length);
+  if (start === undefined) return blocks;
+
+  return [
+    ...blocks,
+    {
+      id: `mt-focus-${task.id}`,
+      title: `Focus — ${task.title}`,
+      agenda: `Protected time for ${task.ref}. ${task.detail}`,
+      kind: 'focus' as const,
+      date,
+      start,
+      end: toClock(toMinutes(start) + length),
+      organizer: task.owner,
+      invitees: [],
+      status: 'confirmed' as const,
+      online: true,
+      taskId: task.id,
+      origin: { module: 'TaskFlow', ref: task.ref },
+      notes: TASK_TITLE.get(task.id),
+    },
+  ];
+}, []);
+
+export const MEETINGS: Array<New<Meeting> & { id: string }> = [
+  ...diaryMeetings,
+  ...eventMeetings,
+  ...visitMeetings,
+  ...focusMeetings,
+];

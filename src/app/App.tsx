@@ -42,8 +42,11 @@ const TaskFlow = lazy(() =>
   import('./components/views/taskflow/TaskFlow').then((m) => ({ default: m.TaskFlow })),
 );
 
+const MyCalendar = lazy(() =>
+  import('./components/views/calendar/MyCalendar').then((m) => ({ default: m.MyCalendar })),
+);
+
 const load = {
-  calendar: lazy(() => import('./components/dixels2/CoreCalendar').then((m) => ({ default: m.CoreCalendar }))),
   atmosphere: lazy(() => import('./components/dixels2/SmartControlView').then((m) => ({ default: m.SmartControlView }))),
   pathfinder: lazy(() => import('./components/dixels2/CampusGuideView').then((m) => ({ default: m.CampusGuideView }))),
   twinspace: lazy(() => import('./components/dixels2/SpaceManagement').then((m) => ({ default: m.SpaceManagement }))),
@@ -84,7 +87,7 @@ function App() {
               <Route element={<AppShell />}>
                 <Route index element={<Navigate to="/today" replace />} />
                 <Route path="/today" element={<Today />} />
-                <Route path="/calendar" element={<LegacyModule id="calendar" Component={load.calendar} />} />
+                <Route path="/calendar" element={<MyCalendar />} />
                 <Route path="/taskflow" element={<TaskFlow />} />
                 <Route path="/atmosphere" element={<LegacyModule id="atmosphere" Component={load.atmosphere} />} />
                 <Route path="/spaceos" element={<SpaceOS />} />

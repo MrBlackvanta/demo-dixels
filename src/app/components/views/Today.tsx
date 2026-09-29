@@ -13,13 +13,15 @@ import {
 import { toast } from 'sonner@2.0.3';
 import { CountUp } from '../shell/CountUp';
 import { cn } from '../ui/utils';
-import { duration, formatDay, todayKey } from '../../lib/format';
+import { duration, formatDay, initials, toMinutes, todayKey } from '../../lib/format';
 import { moveTo, remainingOf } from '../../lib/workload';
+import { byStart, isOnInvite, nowMinutes } from '../../lib/agenda';
 import { useCollection } from '../../lib/store';
 import {
   CURRENT_USER,
   meetings as meetingsCol,
   orders as ordersCol,
+  spaces as spacesCol,
   tasks as tasksCol,
   tickets as ticketsCol,
   visits as visitsCol,
@@ -32,27 +34,17 @@ const timeOfDay = (hour: number): string => {
   return 'Good evening';
 };
 
-const clock = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
 function useNextMeeting(meetings: Meeting[]): { meeting?: Meeting; minutesAway: number } {
-  const [now, setNow] = useState(() => Date.now());
+  const [minute, setMinute] = useState(() => nowMinutes());
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    const timer = window.setInterval(() => setMinute(nowMinutes()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const upcoming = [...meetings]
-    .filter((item) => new Date(item.end).getTime() > now)
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  const meeting = [...meetings].filter((item) => toMinutes(item.end) > minute).sort(byStart)[0];
 
-  const meeting = upcoming[0];
-  const minutesAway = meeting
-    ? Math.round((new Date(meeting.start).getTime() - now) / 60_000)
-    : 0;
-
-  return { meeting, minutesAway };
+  return { meeting, minutesAway: meeting ? toMinutes(meeting.start) - minute : 0 };
 }
 
 export function Today() {
@@ -62,8 +54,20 @@ export function Today() {
   const orders = useCollection(ordersCol);
   const tickets = useCollection(ticketsCol);
   const tasks = useCollection(tasksCol);
+  const spaces = useCollection(spacesCol);
 
-  const { meeting, minutesAway } = useNextMeeting(meetings);
+  const dayOrder = meetings
+    .filter(
+      (item) =>
+        item.date === todayKey() && item.status !== 'cancelled' && isOnInvite(item, CURRENT_USER.name),
+    )
+    .sort(byStart);
+
+  const { meeting, minutesAway } = useNextMeeting(dayOrder);
+  const roomOf = (item: Meeting) =>
+    spaces.find((space) => space.id === item.spaceId)?.name ?? item.place ?? 'Online';
+  const levelOf = (item: Meeting) =>
+    spaces.find((space) => space.id === item.spaceId)?.level ?? 'No room needed';
   const greeting = timeOfDay(new Date().getHours());
   const weekday = new Date().toLocaleDateString([], { weekday: 'long' });
 
@@ -87,12 +91,9 @@ export function Today() {
   };
 
   const liveOrder = orders.find((order) => order.status !== 'delivered');
-  const dayOrder = [...meetings].sort(
-    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
-  );
 
   const stats = [
-    { label: 'Meetings today', value: meetings.length, tone: 'brand' as const },
+    { label: 'Meetings today', value: dayOrder.length, tone: 'brand' as const },
     { label: 'Guests expected', value: expectedGuests.length, tone: 'green' as const },
     { label: 'Your open tasks', value: openTasks.length, tone: 'neutral' as const },
     { label: 'Your open requests', value: myOpenTickets.length, tone: 'neutral' as const },
@@ -130,22 +131,26 @@ export function Today() {
               <div className="px-6 py-6">
                 <h4 className="dx-h3 mb-1.5">{meeting.title}</h4>
                 <p className="mb-5 text-body text-ink-muted">
-                  {clock(meeting.start)} – {clock(meeting.end)} · {meeting.space} · {meeting.level}
+                  {meeting.start} – {meeting.end} · {roomOf(meeting)} · {levelOf(meeting)}
                 </p>
 
                 <div className="mb-6 flex items-center gap-3">
                   <div className="flex -space-x-2">
-                    {meeting.attendees.map((initials) => (
-                      <span
-                        key={initials}
-                        className="grid h-8 w-8 place-items-center rounded-full border-2 border-nt-0 bg-brand-100 text-[0.625rem] font-medium text-brand-700"
-                      >
-                        {initials}
-                      </span>
-                    ))}
+                    {[meeting.organizer, ...meeting.invitees.map((guest) => guest.name)]
+                      .slice(0, 5)
+                      .map((person) => (
+                        <span
+                          key={person}
+                          className="grid h-8 w-8 place-items-center rounded-full border-2 border-nt-0 bg-brand-100 text-[0.625rem] font-medium text-brand-700"
+                        >
+                          {initials(person)}
+                        </span>
+                      ))}
                   </div>
                   <span className="text-[0.8125rem] text-ink-muted">
-                    You + {meeting.attendees.length - 1} people
+                    {meeting.invitees.length === 0
+                      ? 'Just you'
+                      : `You + ${meeting.invitees.length} ${meeting.invitees.length === 1 ? 'person' : 'people'}`}
                   </span>
                 </div>
 
@@ -228,21 +233,28 @@ export function Today() {
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_1fr]">
           <section aria-labelledby="day-heading" className="dx-card overflow-hidden">
-            <div className="border-b border-line px-6 py-3.5">
+            <div className="flex items-center justify-between gap-2 border-b border-line px-6 py-3.5">
               <h3 id="day-heading" className="dx-eyebrow">
                 Your day
               </h3>
+              <button
+                type="button"
+                onClick={() => navigate('/calendar')}
+                className="text-[0.75rem] text-ink-muted transition-colors hover:text-brand-700"
+              >
+                Open My Calendar
+              </button>
             </div>
             <ul className="divide-y divide-line">
               {dayOrder.map((item) => (
                 <li key={item.id} className="flex items-center gap-4 px-6 py-4">
                   <span className="w-12 shrink-0 text-[0.8125rem] font-medium tabular-nums text-ink">
-                    {clock(item.start)}
+                    {item.start}
                   </span>
                   <span
                     className={cn(
                       'h-9 w-0.5 shrink-0 rounded-full',
-                      item.status === 'confirmed' ? 'bg-brand-400' : 'bg-line-strong',
+                      item.kind === 'focus' ? 'bg-grn-500' : 'bg-brand-400',
                     )}
                     aria-hidden="true"
                   />
@@ -251,14 +263,9 @@ export function Today() {
                       {item.title}
                     </span>
                     <span className="block truncate text-[0.75rem] text-ink-muted">
-                      {item.space} · {item.level}
+                      {roomOf(item)} · {levelOf(item)}
                     </span>
                   </span>
-                  {item.status === 'tentative' && (
-                    <span className="shrink-0 rounded-full bg-nt-100 px-2 py-0.5 text-[0.625rem] text-ink-muted">
-                      Tentative
-                    </span>
-                  )}
                 </li>
               ))}
             </ul>

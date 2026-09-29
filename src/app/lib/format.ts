@@ -53,6 +53,19 @@ export const money = (amount: number): string =>
     maximumFractionDigits: 0,
   }).format(amount);
 
+export const toMinutes = (clock: string): number => {
+  const [hours, minutes] = clock.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+export const toClock = (minutes: number): string => {
+  const capped = Math.max(0, Math.min(minutes, 24 * 60 - 1));
+  return `${String(Math.floor(capped / 60)).padStart(2, '0')}:${String(capped % 60).padStart(2, '0')}`;
+};
+
+export const addMinutes = (clock: string, minutes: number): string =>
+  toClock(toMinutes(clock) + minutes);
+
 export const duration = (minutes: number): string => {
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);

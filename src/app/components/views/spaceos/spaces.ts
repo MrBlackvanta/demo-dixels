@@ -1,6 +1,9 @@
 import { Headphones, Monitor, MessageSquare, Presentation, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { addMinutes, toClock, toMinutes } from '../../../lib/format';
 import type { Booking, BookingStatus, Space, SpaceKind } from '../../../lib/data';
+
+export { addMinutes, toClock, toMinutes };
 
 export const DAY_START = 8;
 export const DAY_END = 20;
@@ -74,19 +77,7 @@ const HOLDING: BookingStatus[] = ['confirmed', 'pending', 'checked-in'];
 
 export const holdsSpace = (booking: Booking): boolean => HOLDING.includes(booking.status);
 
-export const toMinutes = (clock: string): number => {
-  const [hours, minutes] = clock.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-export const toClock = (minutes: number): string => {
-  const capped = Math.max(0, Math.min(minutes, 24 * 60 - 1));
-  return `${String(Math.floor(capped / 60)).padStart(2, '0')}:${String(capped % 60).padStart(2, '0')}`;
-};
-
 const snapUp = (minutes: number): number => Math.ceil(minutes / SLOT) * SLOT;
-
-export const addMinutes = (clock: string, minutes: number): string => toClock(toMinutes(clock) + minutes);
 
 const overlaps = (aStart: string, aEnd: string, bStart: string, bEnd: string): boolean =>
   toMinutes(aStart) < toMinutes(bEnd) && toMinutes(aEnd) > toMinutes(bStart);

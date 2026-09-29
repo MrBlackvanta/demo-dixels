@@ -19,14 +19,48 @@ import {
 import type { Entity } from './store';
 import type { Persona } from './products';
 
+export interface Origin {
+  module: string;
+  ref: string;
+}
+
+export type MeetingKind =
+  | 'meeting'
+  | 'focus'
+  | 'workshop'
+  | 'one-to-one'
+  | 'interview'
+  | 'gathering';
+
+export type MeetingStatus = 'confirmed' | 'tentative' | 'cancelled';
+
+export type Rsvp = 'yes' | 'no' | 'maybe' | 'pending';
+
+export interface Invitee {
+  name: string;
+  answer: Rsvp;
+  optional: boolean;
+}
+
 export interface Meeting extends Entity {
   title: string;
-  space: string;
-  level: string;
+  agenda: string;
+  kind: MeetingKind;
+  date: string;
   start: string;
   end: string;
-  attendees: string[];
-  status: 'confirmed' | 'tentative' | 'proposed';
+  organizer: string;
+  invitees: Invitee[];
+  status: MeetingStatus;
+  online: boolean;
+  place?: string;
+  spaceId?: string;
+  bookingId?: string;
+  taskId?: string;
+  eventId?: string;
+  origin?: Origin;
+  repeats?: string;
+  notes?: string;
 }
 
 export type SpaceKind = 'Meeting room' | 'Huddle' | 'Focus pod' | 'Desk' | 'Training';
@@ -290,11 +324,6 @@ export interface Checkpoint {
   done: boolean;
 }
 
-export interface TaskOrigin {
-  module: string;
-  ref: string;
-}
-
 export interface Task extends Entity {
   ref: string;
   title: string;
@@ -312,7 +341,7 @@ export interface Task extends Entity {
   checklist: Checkpoint[];
   tags: string[];
   thread: ThreadEntry[];
-  origin?: TaskOrigin;
+  origin?: Origin;
   spaceId?: string;
   startedAt?: string;
   doneAt?: string;
@@ -373,7 +402,7 @@ export function seedDemoData(): void {
   seedOnce([
     {
       col: meetings as never,
-      rows: MEETINGS.map(row),
+      rows: MEETINGS.map(keyed),
     },
     {
       col: spaces as never,
@@ -381,7 +410,7 @@ export function seedDemoData(): void {
     },
     {
       col: bookings as never,
-      rows: BOOKINGS.map(row),
+      rows: BOOKINGS.map(keyed),
     },
     {
       col: visits as never,
