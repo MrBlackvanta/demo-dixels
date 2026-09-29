@@ -20,6 +20,7 @@ import {
   clashesFor,
   freeInWorkday,
   gapsFor,
+  holdsTime,
   isOnInvite,
   lengthOf,
   monthLabel,
@@ -94,6 +95,7 @@ export function MyCalendar() {
     () =>
       todayRows.filter(
         (meeting) =>
+          holdsTime(meeting, me) &&
           clashesFor(all, [me], todayKey(), meeting.start, meeting.end, meeting.id).length > 0,
       ).length,
     [all, todayRows],

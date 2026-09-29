@@ -18,7 +18,7 @@ import {
 } from '../../../lib/data';
 import { toClock, todayKey, toMinutes } from '../../../lib/format';
 import { dueFrom } from '../../../lib/sla';
-import { byStart, isOnInvite, nowMinutes } from '../../../lib/agenda';
+import { byStart, holdsTime, nowMinutes } from '../../../lib/agenda';
 import {
   LEVELS,
   buildGraph,
@@ -119,10 +119,7 @@ export function Pathfinder() {
   const mine = useMemo(
     () =>
       meetings
-        .filter(
-          (meeting) =>
-            meeting.date === today && meeting.status !== 'cancelled' && isOnInvite(meeting, me),
-        )
+        .filter((meeting) => meeting.date === today && holdsTime(meeting, me))
         .sort(byStart),
     [meetings, today],
   );
