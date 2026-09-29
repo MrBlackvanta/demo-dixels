@@ -1,8 +1,10 @@
 import { toClock, toMinutes, todayKey } from '../../../lib/format';
 import { nowMinutes } from '../../../lib/agenda';
 import { showing } from '../../../lib/publishing';
+import { expired, usable } from '../../../lib/rights';
 import { MENU } from '../nourish/menu';
 import type {
+  Asset,
   Booking,
   Canvas,
   CanvasTone,
@@ -22,6 +24,7 @@ export interface Frame {
   footnote?: string;
   tone: CanvasTone;
   source: string;
+  image?: string;
 }
 
 export interface Board {
@@ -32,10 +35,12 @@ export interface Board {
   zones: Zone[];
   closures: Closure[];
   entries: Entry[];
+  assets: Asset[];
 }
 
 const SOURCE_NAME: Record<Canvas['source'], string> = {
   notice: 'Written here',
+  poster: 'Vault',
   arrivals: 'VisitFlow',
   events: 'Gather',
   menu: 'Nourish',
@@ -46,7 +51,8 @@ const SOURCE_NAME: Record<Canvas['source'], string> = {
 
 export const sourceName = (source: Canvas['source']): string => SOURCE_NAME[source];
 
-export const isLiveSource = (source: Canvas['source']): boolean => source !== 'notice';
+export const isLiveSource = (source: Canvas['source']): boolean =>
+  source !== 'notice' && source !== 'poster';
 
 const boundToEntry = (canvas: Pick<Canvas, 'source' | 'entryId'>): boolean =>
   canvas.source === 'notice' && canvas.entryId !== undefined;
@@ -55,7 +61,7 @@ export const sourceLabel = (canvas: Pick<Canvas, 'source' | 'entryId'>): string 
   boundToEntry(canvas) ? 'Content' : SOURCE_NAME[canvas.source];
 
 export const readsLive = (canvas: Pick<Canvas, 'source' | 'entryId'>): boolean =>
-  isLiveSource(canvas.source) || boundToEntry(canvas);
+  isLiveSource(canvas.source) || boundToEntry(canvas) || canvas.source === 'poster';
 
 const shortName = (full: string): string => full.split(' ')[0];
 
@@ -272,18 +278,31 @@ const NOTICE_EYEBROW: Record<Entry['kind'], string> = {
   welcome: 'Welcome',
 };
 
-export const entryFrame = (entry: Entry, tone: CanvasTone, footnote?: string): Frame => ({
+export const entryFrame = (
+  entry: Entry,
+  tone: CanvasTone,
+  footnote?: string,
+  image?: string,
+): Frame => ({
   eyebrow: NOTICE_EYEBROW[entry.kind],
   headline: entry.title,
   lines: [entry.body],
   footnote,
   tone,
   source: 'Content',
+  image,
 });
+
+export const heroFor = (entry: Entry, assets: Asset[]): string | undefined => {
+  const hero = assets.find((row) => row.id === entry.heroId);
+  return hero !== undefined && usable(hero) ? hero.url : undefined;
+};
 
 const notice = (canvas: Canvas, board: Board): Frame => {
   const entry = board.entries.find((row) => row.id === canvas.entryId);
-  if (entry !== undefined && showing(entry)) return entryFrame(entry, canvas.tone, canvas.footnote);
+  if (entry !== undefined && showing(entry)) {
+    return entryFrame(entry, canvas.tone, canvas.footnote, heroFor(entry, board.assets));
+  }
 
   return {
     eyebrow: 'Notice',
@@ -295,8 +314,40 @@ const notice = (canvas: Canvas, board: Board): Frame => {
   };
 };
 
+export const assetFrame = (asset: Asset, canvas: Pick<Canvas, 'tone' | 'headline' | 'footnote'>): Frame => ({
+  eyebrow: 'Vault',
+  headline: canvas.headline ?? asset.name,
+  lines: [],
+  footnote: canvas.footnote,
+  tone: canvas.tone,
+  source: SOURCE_NAME.poster,
+  image: asset.url,
+});
+
+const poster = (canvas: Canvas, board: Board): Frame => {
+  const asset = board.assets.find((row) => row.id === canvas.assetId);
+  if (asset !== undefined && usable(asset)) return assetFrame(asset, canvas);
+
+  return {
+    eyebrow: 'Holding',
+    headline: canvas.headline ?? canvas.title,
+    lines: [
+      asset === undefined
+        ? 'No artwork picked yet.'
+        : expired(asset)
+          ? `The licence on ${asset.name} has run out.`
+          : `${asset.name} has not been signed off yet.`,
+    ],
+    footnote: 'Sort it in Vault and this screen fills itself in.',
+    tone: 'ink',
+    source: SOURCE_NAME.poster,
+  };
+};
+
 export function paint(canvas: Canvas, board: Board, screen?: Screen): Frame {
   switch (canvas.source) {
+    case 'poster':
+      return poster(canvas, board);
     case 'arrivals':
       return arrivals(canvas, board, screen);
     case 'events':

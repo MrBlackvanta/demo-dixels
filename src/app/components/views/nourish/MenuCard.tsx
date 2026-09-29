@@ -36,6 +36,9 @@ export function MenuCard({ item, onSelect }: MenuCardProps) {
           alt=""
           loading="lazy"
           decoding="async"
+          ref={(node) => {
+            if (node?.complete === true) setLoaded(true);
+          }}
           onLoad={() => setLoaded(true)}
           className={cn(
             'relative h-full w-full object-cover transition-all duration-500',

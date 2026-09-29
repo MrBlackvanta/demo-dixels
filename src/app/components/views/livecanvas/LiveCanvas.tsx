@@ -6,6 +6,7 @@ import { CountUp } from '../../shell/CountUp';
 import { useCollection } from '../../../lib/store';
 import {
   CURRENT_USER,
+  assets as assetsCol,
   bookings as bookingsCol,
   canvases as canvasesCol,
   channels as channelsCol,
@@ -62,6 +63,7 @@ export function LiveCanvas() {
   const closures = useCollection(closuresCol);
   const places = useCollection(placesCol);
   const entries = useCollection(entriesCol);
+  const assets = useCollection(assetsCol);
 
   const [lens, setLens] = useState('wall');
   const [pickedScreen, setPickedScreen] = useState<string | null>(null);
@@ -78,8 +80,8 @@ export function LiveCanvas() {
   }, []);
 
   const board: Board = useMemo(
-    () => ({ spaces, bookings, visits, events, zones, closures, entries }),
-    [spaces, bookings, visits, events, zones, closures, entries],
+    () => ({ spaces, bookings, visits, events, zones, closures, entries, assets }),
+    [spaces, bookings, visits, events, zones, closures, entries, assets],
   );
 
   const canvasById = useMemo(
@@ -243,6 +245,7 @@ export function LiveCanvas() {
       body: draft.body === '' ? undefined : draft.body,
       footnote: draft.footnote === '' ? undefined : draft.footnote,
       entryId: draft.entryId,
+      assetId: draft.assetId,
     };
 
     if (canvasDraft?.id === undefined) {

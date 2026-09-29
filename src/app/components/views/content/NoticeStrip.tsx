@@ -1,11 +1,13 @@
 import { Link } from 'react-router';
 import { Megaphone, ScrollText } from 'lucide-react';
 import { useCollection } from '../../../lib/store';
-import { entries as entriesCol } from '../../../lib/data';
+import { assets as assetsCol, entries as entriesCol } from '../../../lib/data';
+import { heroFor } from '../livecanvas/paint';
 import { showing } from './library';
 
 export function NoticeStrip() {
   const published = useCollection(entriesCol);
+  const assets = useCollection(assetsCol);
 
   const worth = published
     .filter((entry) => entry.surfaces.includes('today') && showing(entry))
@@ -31,16 +33,28 @@ export function NoticeStrip() {
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {worth.map((entry) => {
           const Glyph = entry.kind === 'notice' ? Megaphone : ScrollText;
+          const hero = heroFor(entry, assets);
 
           return (
-            <li key={entry.id} className="dx-card px-4 py-3.5">
-              <p className="flex items-start gap-2 text-[0.875rem] font-medium leading-snug text-ink">
-                <Glyph size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-brand-600" />
-                {entry.title}
-              </p>
-              <p className="mt-1.5 line-clamp-2 pl-[1.375rem] text-[0.8125rem] leading-relaxed text-ink-muted">
-                {entry.body}
-              </p>
+            <li key={entry.id} className="dx-card flex items-start gap-3 px-4 py-3.5">
+              {hero !== undefined && (
+                <img
+                  src={hero}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-12 w-12 shrink-0 rounded-sm object-cover"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="flex items-start gap-2 text-[0.875rem] font-medium leading-snug text-ink">
+                  <Glyph size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-brand-600" />
+                  {entry.title}
+                </p>
+                <p className="mt-1.5 line-clamp-2 pl-[1.375rem] text-[0.8125rem] leading-relaxed text-ink-muted">
+                  {entry.body}
+                </p>
+              </div>
             </li>
           );
         })}

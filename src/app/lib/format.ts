@@ -45,6 +45,20 @@ export const timeAgo = (iso: string): string => {
   return new Date(then).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 };
 
+export const longDay = (date: string): string =>
+  new Date(`${date}T00:00:00`).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+export const weight = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1_048_576) return `${Math.round(bytes / 1024)} KB`;
+  if (bytes < 1_073_741_824) return `${(bytes / 1_048_576).toFixed(1)} MB`;
+  return `${(bytes / 1_073_741_824).toFixed(2)} GB`;
+};
+
 export const money = (amount: number): string =>
   new Intl.NumberFormat('en-SA', {
     style: 'currency',

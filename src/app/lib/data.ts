@@ -1,5 +1,6 @@
 import { collection, scalar, seedOnce } from './store';
 import {
+  ASSETS,
   BADGES,
   BOOKINGS,
   CANVASES,
@@ -18,6 +19,7 @@ import {
   RULES,
   SCENES,
   SCREENS,
+  SHELVES,
   SIGN_RULES,
   SPACES,
   TASKS,
@@ -509,6 +511,7 @@ export interface Screen extends Entity {
 
 export type CanvasSource =
   | 'notice'
+  | 'poster'
   | 'arrivals'
   | 'events'
   | 'menu'
@@ -528,6 +531,7 @@ export interface Canvas extends Entity {
   body?: string;
   footnote?: string;
   entryId?: string;
+  assetId?: string;
 }
 
 export interface Channel extends Entity {
@@ -597,11 +601,57 @@ export interface Entry extends Entity {
   history: Revision[];
   translations: Translation[];
   reads: number;
+  heroId?: string;
   team?: TicketTeam;
   reviewer?: string;
   reviewNote?: string;
   liveFrom?: string;
   retireOn?: string;
+}
+
+export type AssetKind = 'image' | 'video' | 'document';
+
+export type AssetStatus = 'draft' | 'review' | 'approved' | 'retired';
+
+export type AssetLicence = 'owned' | 'stock' | 'commissioned' | 'pictured';
+
+export interface AssetVersion {
+  version: number;
+  savedAt: string;
+  savedBy: string;
+  note: string;
+  url: string;
+  bytes: number;
+}
+
+export interface Shelf extends Entity {
+  name: string;
+  purpose: string;
+}
+
+export interface Asset extends Entity {
+  name: string;
+  kind: AssetKind;
+  format: string;
+  bytes: number;
+  url: string;
+  shelfId: string;
+  owner: string;
+  status: AssetStatus;
+  tags: string[];
+  licence: AssetLicence;
+  version: number;
+  history: AssetVersion[];
+  downloads: number;
+  width?: number;
+  height?: number;
+  seconds?: number;
+  credit?: string;
+  expiresOn?: string;
+  restriction?: string;
+  openedAt?: string;
+  reviewer?: string;
+  reviewNote?: string;
 }
 
 export const meetings = collection<Meeting>('meetings');
@@ -631,6 +681,8 @@ export const canvases = collection<Canvas>('canvases');
 export const channels = collection<Channel>('channels');
 export const signRules = collection<SignRule>('signRules');
 export const entries = collection<Entry>('entries');
+export const shelves = collection<Shelf>('shelves');
+export const assets = collection<Asset>('assets');
 
 export const persona = scalar<Persona>('persona', 'Employee');
 export const authed = scalar<boolean>('authed', false);
@@ -767,6 +819,14 @@ export function seedDemoData(): void {
     {
       col: entries as never,
       rows: ENTRIES.map(keyed),
+    },
+    {
+      col: shelves as never,
+      rows: SHELVES.map(keyed),
+    },
+    {
+      col: assets as never,
+      rows: ASSETS.map(keyed),
     },
   ]);
 }

@@ -55,6 +55,22 @@ export function ScreenCanvas({ frame, shape, size, dark, progress, fill }: Scree
     <div
       className={cn('@container overflow-hidden rounded-[0.25rem] bg-gradient-to-br', tone.wash, box)}
     >
+      {frame.image !== undefined && (
+        <>
+          <img
+            src={frame.image}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-nt-950/92 via-nt-950/45 to-nt-950/20"
+            aria-hidden="true"
+          />
+        </>
+      )}
+
       <div
         className="dx-grid-texture pointer-events-none absolute inset-0 opacity-[0.07]"
         aria-hidden="true"

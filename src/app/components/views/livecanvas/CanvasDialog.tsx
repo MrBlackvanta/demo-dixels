@@ -6,6 +6,8 @@ import { Modal } from '../../shell/Modal';
 import { ScreenCanvas } from './ScreenCanvas';
 import { isLiveSource, paint, sourceName } from './paint';
 import type { Board } from './paint';
+import { weight } from '../../../lib/format';
+import { usable } from '../../../lib/rights';
 import type { Canvas, CanvasSource, CanvasTone } from '../../../lib/data';
 
 export interface CanvasDraft {
@@ -17,6 +19,7 @@ export interface CanvasDraft {
   body: string;
   footnote: string;
   entryId?: string;
+  assetId?: string;
 }
 
 export const blankCanvas = (): CanvasDraft => ({
@@ -38,10 +41,12 @@ export const draftFromCanvas = (canvas: Canvas): CanvasDraft => ({
   body: canvas.body ?? '',
   footnote: canvas.footnote ?? '',
   entryId: canvas.entryId,
+  assetId: canvas.assetId,
 });
 
 const SOURCES: CanvasSource[] = [
   'notice',
+  'poster',
   'arrivals',
   'events',
   'menu',
@@ -59,6 +64,7 @@ const TONES: Array<{ id: CanvasTone; label: string; swatch: string }> = [
 
 const WHERE_FROM: Record<CanvasSource, string> = {
   notice: 'You write this one by hand.',
+  poster: 'Shows a picture straight out of Vault, and stops showing it the day the licence runs out.',
   arrivals: 'Reads today’s visitor list straight out of VisitFlow.',
   events: 'Reads the next published event out of Gather.',
   menu: 'Reads what the café is still serving out of Nourish.',
@@ -70,6 +76,7 @@ const WHERE_FROM: Record<CanvasSource, string> = {
 interface Errors {
   title?: string;
   headline?: string;
+  assetId?: string;
 }
 
 interface CanvasDialogProps {
@@ -90,6 +97,9 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
   const live = isLiveSource(draft.source);
   const entry = board.entries.find((row) => row.id === draft.entryId);
   const bound = draft.source === 'notice' && entry !== undefined;
+  const showsPicture = draft.source === 'poster';
+  const artwork = board.assets.filter(usable);
+  const picked = board.assets.find((row) => row.id === draft.assetId);
 
   const preview = paint(
     {
@@ -105,6 +115,7 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
       body: draft.body || undefined,
       footnote: draft.footnote || undefined,
       entryId: draft.entryId,
+      assetId: draft.assetId,
     },
     board,
   );
@@ -114,12 +125,17 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
 
     const found: Errors = {};
     if (draft.title.trim().length < 3) found.title = 'Give it a name you will recognise in a list.';
-    if (!live && !bound && draft.headline.trim().length < 3)
+    if (showsPicture && draft.assetId === undefined) found.assetId = 'Pick the artwork this plays.';
+    if (!live && !bound && !showsPicture && draft.headline.trim().length < 3)
       found.headline = 'A notice needs something to say.';
 
     setErrors(found);
     if (found.title) {
       document.getElementById('canvas-title')?.focus();
+      return;
+    }
+    if (found.assetId) {
+      document.getElementById('canvas-artwork')?.focus();
       return;
     }
     if (found.headline) {
@@ -226,7 +242,67 @@ export function CanvasDialog({ initial, editingId, board, onClose, onSave }: Can
                 </div>
               )}
 
-              {!live && !bound && (
+              {showsPicture && (
+                <div>
+                  <label htmlFor="canvas-artwork" className="dx-eyebrow mb-1.5 block">
+                    The artwork
+                  </label>
+                  <select
+                    id="canvas-artwork"
+                    value={draft.assetId ?? ''}
+                    onChange={(event) =>
+                      set('assetId', event.target.value === '' ? undefined : event.target.value)
+                    }
+                    aria-invalid={Boolean(errors.assetId)}
+                    aria-describedby={errors.assetId ? 'canvas-artwork-error' : undefined}
+                    className={cn('dx-field', errors.assetId && 'border-danger')}
+                  >
+                    <option value="">Pick something from Vault</option>
+                    {artwork.map((asset) => (
+                      <option key={asset.id} value={asset.id}>
+                        {asset.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.assetId && (
+                    <p
+                      id="canvas-artwork-error"
+                      role="alert"
+                      className="mt-1.5 text-[0.75rem] text-danger"
+                    >
+                      {errors.assetId}
+                    </p>
+                  )}
+                  {picked !== undefined && (
+                    <p className="mt-1.5 text-[0.75rem] leading-relaxed text-ink-subtle">
+                      {picked.format} · {weight(picked.bytes)}
+                      {picked.credit === undefined ? '' : ` · ${picked.credit}`}
+                    </p>
+                  )}
+                  <p className="mt-1.5 text-[0.75rem] leading-relaxed text-ink-muted">
+                    Only files signed off and in date are offered here.
+                  </p>
+                </div>
+              )}
+
+              {showsPicture && (
+                <div>
+                  <label htmlFor="canvas-caption" className="dx-eyebrow mb-1.5 block">
+                    Caption over the picture
+                  </label>
+                  <input
+                    id="canvas-caption"
+                    type="text"
+                    value={draft.headline}
+                    maxLength={40}
+                    onChange={(event) => set('headline', event.target.value)}
+                    placeholder="Riyadh Summit"
+                    className="dx-field"
+                  />
+                </div>
+              )}
+
+              {!live && !bound && !showsPicture && (
                 <>
                   <div>
                     <label htmlFor="canvas-headline" className="dx-eyebrow mb-1.5 block">

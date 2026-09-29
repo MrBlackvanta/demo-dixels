@@ -62,12 +62,15 @@ const Content = lazy(() =>
   import('./components/views/content/Content').then((m) => ({ default: m.Content })),
 );
 
+const Vault = lazy(() =>
+  import('./components/views/vault/Vault').then((m) => ({ default: m.Vault })),
+);
+
 const load = {
   twinspace: lazy(() => import('./components/dixels2/SpaceManagement').then((m) => ({ default: m.SpaceManagement }))),
   buildingops: lazy(() => import('./components/dixels2/FacilitySmartControl').then((m) => ({ default: m.FacilitySmartControl }))),
   vmsadmin: lazy(() => import('./components/dixels2/VmsAdmin').then((m) => ({ default: m.VmsAdmin }))),
   security: lazy(() => import('./components/dixels2/VmsSecurity').then((m) => ({ default: m.VmsSecurity }))),
-  vault: lazy(() => import('./components/dixels2/DigitalAssetsView').then((m) => ({ default: m.DigitalAssetsView }))),
 };
 
 function ModuleFallback() {
@@ -116,7 +119,7 @@ function App() {
                 <Route path="/resolve" element={<Resolve />} />
                 <Route path="/livecanvas" element={<LiveCanvas />} />
                 <Route path="/content" element={<Content />} />
-                <Route path="/vault" element={<LegacyModule id="vault" Component={load.vault} />} />
+                <Route path="/vault" element={<Vault />} />
                 <Route path="*" element={<LegacyModule id="unbuilt" />} />
               </Route>
             </Routes>
